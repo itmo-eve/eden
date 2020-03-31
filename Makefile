@@ -175,16 +175,13 @@ test: test_base_image test_network_instance
 $(BIN):
 	mkdir -p $(BIN)
 
-bin: elog elogwatch econfig eserver einfowatch einfo einfolast eloglast ecerts
+bin: elog elogwatch eserver einfowatch einfo ecerts
 
 elog: $(BIN)
 	cd cmd/elog/; go build; mv elog $(BIN)
 
 elogwatch: $(BIN)
 	cd cmd/elogwatch/; go build; mv elogwatch $(BIN)
-
-econfig: $(BIN)
-	cd cmd/econfig/; go build; mv econfig $(BIN)
 
 eserver: $(BIN)
 	cd cmd/eserver/; go build; mv eserver $(BIN)
@@ -194,12 +191,6 @@ einfowatch: $(BIN)
 
 einfo: $(BIN)
 	cd cmd/einfo/; go build; mv einfo $(BIN)
-
-einfolast: $(BIN)
-	cd cmd/einfolast/; go build; mv einfolast $(BIN)
-
-eloglast: $(BIN)
-	cd cmd/eloglast/; go build; mv eloglast $(BIN)
 
 ecerts: $(BIN)
 	cd cmd/ecerts/; go build; mv ecerts $(BIN)

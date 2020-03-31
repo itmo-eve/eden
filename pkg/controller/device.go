@@ -36,13 +36,13 @@ func (cloud *CloudCtx) GetDeviceFirst() (devUUID *device.Ctx, err error) {
 }
 
 //AddDevice add device with specified devUUID
-func (cloud *CloudCtx) AddDevice(devUUID *uuid.UUID) error {
+func (cloud *CloudCtx) AddDevice(devUUID *uuid.UUID, devModel *device.DevModel) error {
 	for _, el := range cloud.devices {
 		if el.GetID().String() == devUUID.String() {
 			return errors.New("already exists")
 		}
 	}
-	cloud.devices = append(cloud.devices, device.CreateWithBaseConfig(devUUID))
+	cloud.devices = append(cloud.devices, device.CreateWithBaseConfig(devUUID, devModel))
 	return nil
 }
 
@@ -90,21 +90,22 @@ func (cloud *CloudCtx) GetConfigBytes(devUUID *uuid.UUID) ([]byte, error) {
 		}
 		NetworkInstanceConfigs = append(NetworkInstanceConfigs, networkInstanceConfig)
 	}
+	devModel := dev.GetDevModel()
 	devConfig := &config.EdgeDevConfig{
 		Id: &config.UUIDandVersion{
 			Uuid:    dev.GetID().String(),
 			Version: "4",
 		},
 		Apps:              nil,
-		Networks:          nil,
+		Networks:          devModel.GetNetworkConfigs(),
 		Datastores:        DataStores,
 		LispInfo:          nil,
 		Base:              BaseOS,
 		Reboot:            nil,
 		Backup:            nil,
 		ConfigItems:       nil,
-		SystemAdapterList: nil,
-		DeviceIoList:      nil,
+		SystemAdapterList: devModel.GetSystemAdapters(),
+		DeviceIoList:      devModel.GetPhysicalIOs(),
 		Manufacturer:      "",
 		ProductName:       "",
 		NetworkInstances:  NetworkInstanceConfigs,

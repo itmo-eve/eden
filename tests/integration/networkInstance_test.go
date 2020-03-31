@@ -33,7 +33,7 @@ func prepareNetworkInstance(ctx controller.Cloud, networkInstanceID string, netw
 	case config.ZNetworkInstType_ZnetInstSwitch:
 		networkInstance.Port = &config.Adapter{
 			Type: config.PhyIoType_PhyIoNoop,
-			Name: "uplink",
+			Name: "eth1",
 		}
 		networkInstance.Ip = &config.Ipspec{
 			Dhcp:    config.DHCPType_DHCPNoop,

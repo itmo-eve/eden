@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/controller/adam"
+	"github.com/lf-edge/eden/pkg/device"
 	"github.com/lf-edge/eden/pkg/utils"
 	uuid "github.com/satori/go.uuid"
 	"os"
@@ -76,7 +77,7 @@ func controllerPrepare() (ctx controller.Cloud, err error) {
 		if err != nil {
 			return ctrl, err
 		}
-		err = ctrl.AddDevice(&devUUID)
+		err = ctrl.AddDevice(&devUUID, device.DevModelQemu)
 		if err != nil {
 			return ctrl, err
 		}

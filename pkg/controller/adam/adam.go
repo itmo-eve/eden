@@ -69,7 +69,7 @@ func (adam *Ctx) DeviceList() (out []string, err error) {
 	return adam.getList("/admin/device")
 }
 
-//ConfigSet get config for devID
+//ConfigSet set config for devID
 func (adam *Ctx) ConfigSet(devUUID *uuid.UUID, devConfig []byte) (err error) {
 	return adam.putObj(path.Join("/admin/device", devUUID.String(), "config"), devConfig)
 }

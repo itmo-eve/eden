@@ -15,13 +15,13 @@ func (cloud *CloudCtx) GetDataStore(ID string) (ds *config.DatastoreConfig, err 
 	return nil, fmt.Errorf("not found with ID: %s", ID)
 }
 
-//AddDatastore add DataStore config to cloud
-func (cloud *CloudCtx) AddDatastore(datastoreConfig *config.DatastoreConfig) error {
+//AddDataStore add DataStore config to cloud
+func (cloud *CloudCtx) AddDataStore(dataStoreConfig *config.DatastoreConfig) error {
 	for _, dataStore := range cloud.datastores {
-		if dataStore.Id == datastoreConfig.Id {
-			return fmt.Errorf("already exists with ID: %s", datastoreConfig.Id)
+		if dataStore.Id == dataStoreConfig.Id {
+			return fmt.Errorf("already exists with ID: %s", dataStoreConfig.Id)
 		}
 	}
-	cloud.datastores = append(cloud.datastores, datastoreConfig)
+	cloud.datastores = append(cloud.datastores, dataStoreConfig)
 	return nil
 }

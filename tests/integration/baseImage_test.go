@@ -23,7 +23,7 @@ func prepareBaseImageLocal(ctx controller.Cloud, dataStoreID string, imageID str
 	if err != nil {
 		return err
 	}
-	err = ctx.AddDatastore(&config.DatastoreConfig{
+	err = ctx.AddDataStore(&config.DatastoreConfig{
 		Id:       dataStoreID,
 		DType:    config.DsType_DsHttp,
 		Fqdn:     "http://mydomain.adam:8888",

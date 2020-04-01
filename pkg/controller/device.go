@@ -36,13 +36,51 @@ func (cloud *CloudCtx) GetDeviceFirst() (devUUID *device.Ctx, err error) {
 }
 
 //AddDevice add device with specified devUUID
-func (cloud *CloudCtx) AddDevice(devUUID *uuid.UUID, devModel *device.DevModel) error {
+func (cloud *CloudCtx) AddDevice(devUUID *uuid.UUID) error {
 	for _, el := range cloud.devices {
 		if el.GetID().String() == devUUID.String() {
 			return errors.New("already exists")
 		}
 	}
-	cloud.devices = append(cloud.devices, device.CreateWithBaseConfig(devUUID, devModel))
+	cloud.devices = append(cloud.devices, device.CreateWithBaseConfig(devUUID))
+	return nil
+}
+
+func (cloud *CloudCtx) ApplyDevModel(devUUID *uuid.UUID, devModel *DevModel) error {
+	dev, err := cloud.GetDeviceUUID(devUUID)
+	if err != nil {
+		return err
+	}
+	dev.SetAdaptersForSwitch(devModel.adapterForSwitches)
+	var adapters []string
+	for _, el := range devModel.adapters {
+		id := uuid.UUID{}.String()
+		err = cloud.AddSystemAdapter(id, el)
+		if err != nil {
+			return err
+		}
+		adapters = append(adapters, id)
+	}
+	dev.SetSystemAdaptersConfig(adapters)
+	var networks []string
+	for _, el := range devModel.networks {
+		err = cloud.AddNetworkConfig(el)
+		if err != nil {
+			return err
+		}
+		networks = append(networks, el.Id)
+	}
+	dev.SetNetworkConfig(networks)
+	var physicalIOs []string
+	for _, el := range devModel.physicalIOs {
+		id := uuid.UUID{}.String()
+		err = cloud.AddPhysicalIO(id, el)
+		if err != nil {
+			return err
+		}
+		physicalIOs = append(physicalIOs, id)
+	}
+	dev.SetPhysicalIOConfig(physicalIOs)
 	return nil
 }
 
@@ -61,8 +99,8 @@ func (cloud *CloudCtx) GetConfigBytes(devUUID *uuid.UUID) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var BaseOS []*config.BaseOSConfig
-	var DataStores []*config.DatastoreConfig
+	var baseOS []*config.BaseOSConfig
+	var dataStores []*config.DatastoreConfig
 	for _, baseOSConfigID := range dev.GetBaseOSConfigs() {
 		baseOSConfig, err := cloud.GetBaseOSConfig(baseOSConfigID)
 		if err != nil {
@@ -76,39 +114,62 @@ func (cloud *CloudCtx) GetConfigBytes(devUUID *uuid.UUID) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			if !checkIfDatastoresContains(dataStore.Id, DataStores) {
-				DataStores = append(DataStores, dataStore)
+			if !checkIfDatastoresContains(dataStore.Id, dataStores) {
+				dataStores = append(dataStores, dataStore)
 			}
 		}
-		BaseOS = append(BaseOS, baseOSConfig)
+		baseOS = append(baseOS, baseOSConfig)
 	}
-	var NetworkInstanceConfigs []*config.NetworkInstanceConfig
+	var networkInstanceConfigs []*config.NetworkInstanceConfig
 	for _, networkInstanceConfigID := range dev.GetNetworkInstances() {
 		networkInstanceConfig, err := cloud.GetNetworkInstanceConfig(networkInstanceConfigID)
 		if err != nil {
 			return nil, err
 		}
-		NetworkInstanceConfigs = append(NetworkInstanceConfigs, networkInstanceConfig)
+		networkInstanceConfigs = append(networkInstanceConfigs, networkInstanceConfig)
 	}
-	devModel := dev.GetDevModel()
+	var physicalIOs []*config.PhysicalIO
+	for _, physicalIOID := range dev.GetPhysicalIOs() {
+		physicalIOConfig, err := cloud.GetPhysicalIO(physicalIOID)
+		if err != nil {
+			return nil, err
+		}
+		physicalIOs = append(physicalIOs, physicalIOConfig)
+	}
+	var networkConfigs []*config.NetworkConfig
+	for _, networkConfigID := range dev.GetNetworks() {
+		networkConfig, err := cloud.GetNetworkConfig(networkConfigID)
+		if err != nil {
+			return nil, err
+		}
+		networkConfigs = append(networkConfigs, networkConfig)
+	}
+	var systemAdapterConfigs []*config.SystemAdapter
+	for _, systemAdapterConfigID := range dev.GetSystemAdapters() {
+		systemAdapterConfig, err := cloud.GetSystemAdapter(systemAdapterConfigID)
+		if err != nil {
+			return nil, err
+		}
+		systemAdapterConfigs = append(systemAdapterConfigs, systemAdapterConfig)
+	}
 	devConfig := &config.EdgeDevConfig{
 		Id: &config.UUIDandVersion{
 			Uuid:    dev.GetID().String(),
 			Version: "4",
 		},
 		Apps:              nil,
-		Networks:          devModel.GetNetworkConfigs(),
-		Datastores:        DataStores,
+		Networks:          networkConfigs,
+		Datastores:        dataStores,
 		LispInfo:          nil,
-		Base:              BaseOS,
+		Base:              baseOS,
 		Reboot:            nil,
 		Backup:            nil,
 		ConfigItems:       nil,
-		SystemAdapterList: devModel.GetSystemAdapters(),
-		DeviceIoList:      devModel.GetPhysicalIOs(),
+		SystemAdapterList: systemAdapterConfigs,
+		DeviceIoList:      physicalIOs,
 		Manufacturer:      "",
 		ProductName:       "",
-		NetworkInstances:  NetworkInstanceConfigs,
+		NetworkInstances:  networkInstanceConfigs,
 		Enterprise:        "",
 		Name:              "",
 	}

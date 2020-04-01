@@ -3,7 +3,6 @@ package integration
 import (
 	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/controller/einfo"
-	"github.com/lf-edge/eden/pkg/device"
 	"github.com/lf-edge/eve/api/go/config"
 	"github.com/pkg/errors"
 	"testing"
@@ -15,7 +14,7 @@ const cloudOConfig = `{ "VpnRole": "onPremClient",
   "ClientConfigList": [{"IpAddr": "%any", "PreSharedKey": "0sjVzONCF02ncsgiSlmIXeqhGN", "SubnetBlock": "30.1.0.0/24"}]
 }`
 
-func prepareNetworkInstance(ctx controller.Cloud, networkInstanceID string, networkInstanceName string, networkInstanceType config.ZNetworkInstType, model *device.DevModel) error {
+func prepareNetworkInstance(ctx controller.Cloud, networkInstanceID string, networkInstanceName string, networkInstanceType config.ZNetworkInstType, model *controller.DevModel) error {
 	uid := config.UUIDandVersion{
 		Uuid:    networkInstanceID,
 		Version: "4",
@@ -34,7 +33,7 @@ func prepareNetworkInstance(ctx controller.Cloud, networkInstanceID string, netw
 	case config.ZNetworkInstType_ZnetInstSwitch:
 		networkInstance.Port = &config.Adapter{
 			Type: config.PhyIoType_PhyIoNoop,
-			Name: model.GetAdapterForSwitch(),
+			Name: model.GetFirstAdapterForSwitches(),
 		}
 		networkInstance.Ip = &config.Ipspec{
 			Dhcp:    config.DHCPType_DHCPNoop,
@@ -102,6 +101,11 @@ func TestNetworkInstance(t *testing.T) {
 		t.Fatal("Fail in controller prepare: ", err)
 	}
 
+	deviceModel, err := ctx.GetDevModel(controller.DevModelTypeQemu)
+	if err != nil {
+		t.Fatal("Fail in get deviceModel: ", err)
+	}
+
 	deviceCtx, err := ctx.GetDeviceFirst()
 	if err != nil {
 		t.Fatal("Fail in get first device: ", err)
@@ -133,7 +137,7 @@ func TestNetworkInstance(t *testing.T) {
 	for _, tt := range networkInstanceTests {
 		t.Run(tt.networkInstanceName, func(t *testing.T) {
 
-			err = prepareNetworkInstance(ctx, tt.networkInstanceID, tt.networkInstanceName, tt.networkInstanceType, deviceCtx.GetDevModel())
+			err = prepareNetworkInstance(ctx, tt.networkInstanceID, tt.networkInstanceName, tt.networkInstanceType, deviceModel)
 			if err != nil {
 				t.Fatal("Fail in prepare network instance: ", err)
 			}

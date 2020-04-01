@@ -76,7 +76,7 @@ func controllerPrepare() (ctx controller.Cloud, err error) {
 		if err != nil {
 			return ctrl, err
 		}
-		err = ctrl.AddDevice(&devUUID)
+		err = ctrl.AddDevice(devUUID)
 		if err != nil {
 			return ctrl, err
 		}

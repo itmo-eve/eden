@@ -122,13 +122,13 @@ func TestBaseImage(t *testing.T) {
 			if err != nil {
 				t.Fatal("Fail in prepare base image from local file: ", err)
 			}
-			devCtx, err := ctx.GetDeviceFirst()
+			deviceCtx, err := ctx.GetDeviceFirst()
 			if err != nil {
 				t.Fatal("Fail in get first device: ", err)
 			}
-			devCtx.SetBaseOSConfig([]string{tt.baseID})
-			devUUID := devCtx.GetID()
-			err = ctx.ConfigSync(devUUID)
+			deviceCtx.SetBaseOSConfig([]string{tt.baseID})
+			devUUID := deviceCtx.GetID()
+			err = ctx.ConfigSync(deviceCtx)
 			if err != nil {
 				t.Fatal("Fail in sync config with controller: ", err)
 			}

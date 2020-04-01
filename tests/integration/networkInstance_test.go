@@ -143,8 +143,12 @@ func TestNetworkInstance(t *testing.T) {
 			}
 
 			devUUID := deviceCtx.GetID()
+			err = ctx.ApplyDevModel(deviceCtx, deviceModel)
+			if err != nil {
+				t.Fatal("Fail in ApplyDevModel: ", err)
+			}
 			deviceCtx.SetNetworkInstanceConfig([]string{tt.networkInstanceID})
-			err = ctx.ConfigSync(devUUID)
+			err = ctx.ConfigSync(deviceCtx)
 			if err != nil {
 				t.Fatal("Fail in sync config with controller: ", err)
 			}

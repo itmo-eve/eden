@@ -6,7 +6,7 @@ import (
 
 //Ctx is base struct for device
 type Ctx struct {
-	id                *uuid.UUID
+	id                uuid.UUID
 	baseOSConfigs     []string
 	networkInstances  []string
 	adaptersForSwitch []string
@@ -16,14 +16,14 @@ type Ctx struct {
 }
 
 //CreateWithBaseConfig generate base config for device with id and associate with cloudCtx
-func CreateWithBaseConfig(id *uuid.UUID) *Ctx {
+func CreateWithBaseConfig(id uuid.UUID) *Ctx {
 	return &Ctx{
 		id: id,
 	}
 }
 
 //GetID return id of device
-func (cfg *Ctx) GetID() *uuid.UUID { return cfg.id }
+func (cfg *Ctx) GetID() uuid.UUID { return cfg.id }
 
 //GetBaseOSConfigs return baseOSConfigs of device
 func (cfg *Ctx) GetBaseOSConfigs() []string { return cfg.baseOSConfigs }

@@ -6,13 +6,13 @@ import (
 )
 
 //GetDataStore return DataStore config from cloud by ID
-func (cloud *CloudCtx) GetDataStore(ID string) (ds *config.DatastoreConfig, err error) {
+func (cloud *CloudCtx) GetDataStore(id string) (ds *config.DatastoreConfig, err error) {
 	for _, dataStore := range cloud.datastores {
-		if dataStore.Id == ID {
+		if dataStore.Id == id {
 			return dataStore, nil
 		}
 	}
-	return nil, fmt.Errorf("not found with ID: %s", ID)
+	return nil, fmt.Errorf("not found DatastoreConfig with ID: %s", id)
 }
 
 //AddDataStore add DataStore config to cloud

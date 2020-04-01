@@ -9,16 +9,16 @@ import (
 )
 
 //ConfigSync set config for devID
-func (cloud *CloudCtx) ConfigSync(devUUID *uuid.UUID) (err error) {
-	devConfig, err := cloud.GetConfigBytes(devUUID)
+func (cloud *CloudCtx) ConfigSync(dev *device.Ctx) (err error) {
+	devConfig, err := cloud.GetConfigBytes(dev)
 	if err != nil {
 		return err
 	}
-	return cloud.ConfigSet(devUUID, devConfig)
+	return cloud.ConfigSet(dev.GetID(), devConfig)
 }
 
 //GetDeviceUUID return device object by devUUID
-func (cloud *CloudCtx) GetDeviceUUID(devUUID *uuid.UUID) (dID *device.Ctx, err error) {
+func (cloud *CloudCtx) GetDeviceUUID(devUUID uuid.UUID) (dev *device.Ctx, err error) {
 	for _, el := range cloud.devices {
 		if devUUID.String() == el.GetID().String() {
 			return el, nil
@@ -28,7 +28,7 @@ func (cloud *CloudCtx) GetDeviceUUID(devUUID *uuid.UUID) (dID *device.Ctx, err e
 }
 
 //GetDeviceFirst return first device object
-func (cloud *CloudCtx) GetDeviceFirst() (devUUID *device.Ctx, err error) {
+func (cloud *CloudCtx) GetDeviceFirst() (dev *device.Ctx, err error) {
 	if len(cloud.devices) == 0 {
 		return nil, errors.New("no device found")
 	}
@@ -36,7 +36,7 @@ func (cloud *CloudCtx) GetDeviceFirst() (devUUID *device.Ctx, err error) {
 }
 
 //AddDevice add device with specified devUUID
-func (cloud *CloudCtx) AddDevice(devUUID *uuid.UUID) error {
+func (cloud *CloudCtx) AddDevice(devUUID uuid.UUID) error {
 	for _, el := range cloud.devices {
 		if el.GetID().String() == devUUID.String() {
 			return errors.New("already exists")
@@ -46,20 +46,21 @@ func (cloud *CloudCtx) AddDevice(devUUID *uuid.UUID) error {
 	return nil
 }
 
-func (cloud *CloudCtx) ApplyDevModel(devUUID *uuid.UUID, devModel *DevModel) error {
-	dev, err := cloud.GetDeviceUUID(devUUID)
-	if err != nil {
-		return err
-	}
+//ApplyDevModel apply networks, adapters and physicalIOs from DevModel to device
+func (cloud *CloudCtx) ApplyDevModel(dev *device.Ctx, devModel *DevModel) error {
+	var err error
 	dev.SetAdaptersForSwitch(devModel.adapterForSwitches)
 	var adapters []string
 	for _, el := range devModel.adapters {
-		id := uuid.UUID{}.String()
-		err = cloud.AddSystemAdapter(id, el)
+		id, err := uuid.NewV4()
 		if err != nil {
 			return err
 		}
-		adapters = append(adapters, id)
+		err = cloud.AddSystemAdapter(id.String(), el)
+		if err != nil {
+			return err
+		}
+		adapters = append(adapters, id.String())
 	}
 	dev.SetSystemAdaptersConfig(adapters)
 	var networks []string
@@ -73,12 +74,15 @@ func (cloud *CloudCtx) ApplyDevModel(devUUID *uuid.UUID, devModel *DevModel) err
 	dev.SetNetworkConfig(networks)
 	var physicalIOs []string
 	for _, el := range devModel.physicalIOs {
-		id := uuid.UUID{}.String()
-		err = cloud.AddPhysicalIO(id, el)
+		id, err := uuid.NewV4()
 		if err != nil {
 			return err
 		}
-		physicalIOs = append(physicalIOs, id)
+		err = cloud.AddPhysicalIO(id.String(), el)
+		if err != nil {
+			return err
+		}
+		physicalIOs = append(physicalIOs, id.String())
 	}
 	dev.SetPhysicalIOConfig(physicalIOs)
 	return nil
@@ -94,11 +98,7 @@ func checkIfDatastoresContains(devUUID string, ds []*config.DatastoreConfig) boo
 }
 
 //GetConfigBytes generate json representation of device config
-func (cloud *CloudCtx) GetConfigBytes(devUUID *uuid.UUID) ([]byte, error) {
-	dev, err := cloud.GetDeviceUUID(devUUID)
-	if err != nil {
-		return nil, err
-	}
+func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx) ([]byte, error) {
 	var baseOS []*config.BaseOSConfig
 	var dataStores []*config.DatastoreConfig
 	for _, baseOSConfigID := range dev.GetBaseOSConfigs() {

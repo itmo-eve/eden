@@ -20,6 +20,7 @@ type DevModel struct {
 	adapterForSwitches []string
 }
 
+//GetFirstAdapterForSwitches return first adapter available for switch networkInstance
 func (ctx *DevModel) GetFirstAdapterForSwitches() string {
 	if len(ctx.adapterForSwitches) > 0 {
 		return ctx.adapterForSwitches[0]

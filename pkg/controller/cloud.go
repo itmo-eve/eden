@@ -17,12 +17,13 @@ type CloudCtx struct {
 	networks         []*config.NetworkConfig
 	physicalIOs      map[string]*config.PhysicalIO
 	systemAdapters   map[string]*config.SystemAdapter
+	devModels        map[DevModelType]*DevModel
 }
 
 //Cloud is an interface of cloud
 type Cloud interface {
 	Controller
-	AddDevice(devUUID uuid.UUID) error
+	AddDevice(devUUID uuid.UUID) (dev *device.Ctx, err error)
 	GetDeviceUUID(devUUID uuid.UUID) (dev *device.Ctx, err error)
 	GetBaseOSConfig(id string) (baseOSConfig *config.BaseOSConfig, err error)
 	AddBaseOsConfig(baseOSConfig *config.BaseOSConfig) error
@@ -46,6 +47,7 @@ type Cloud interface {
 	AddSystemAdapter(id string, systemAdapter *config.SystemAdapter) error
 	RemoveSystemAdapter(id string) error
 	GetDevModel(devModelType DevModelType) (*DevModel, error)
-	CreateDevModel(PhysicalIOs []*config.PhysicalIO, Networks []*config.NetworkConfig, Adapters []*config.SystemAdapter, AdapterForSwitches []string) *DevModel
+	GetDevModelByName(devModelType string) (*DevModel, error)
+	CreateDevModel(PhysicalIOs []*config.PhysicalIO, Networks []*config.NetworkConfig, Adapters []*config.SystemAdapter, AdapterForSwitches []string, modelType DevModelType) *DevModel
 	ApplyDevModel(dev *device.Ctx, devModel *DevModel) error
 }

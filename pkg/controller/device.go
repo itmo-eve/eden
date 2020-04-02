@@ -36,14 +36,15 @@ func (cloud *CloudCtx) GetDeviceFirst() (dev *device.Ctx, err error) {
 }
 
 //AddDevice add device with specified devUUID
-func (cloud *CloudCtx) AddDevice(devUUID uuid.UUID) error {
+func (cloud *CloudCtx) AddDevice(devUUID uuid.UUID) (dev *device.Ctx, err error) {
 	for _, el := range cloud.devices {
 		if el.GetID().String() == devUUID.String() {
-			return errors.New("already exists")
+			return nil, errors.New("already exists")
 		}
 	}
-	cloud.devices = append(cloud.devices, device.CreateWithBaseConfig(devUUID))
-	return nil
+	dev = device.CreateWithBaseConfig(devUUID)
+	cloud.devices = append(cloud.devices, dev)
+	return
 }
 
 //ApplyDevModel apply networks, adapters and physicalIOs from DevModel to device
@@ -85,6 +86,7 @@ func (cloud *CloudCtx) ApplyDevModel(dev *device.Ctx, devModel *DevModel) error 
 		physicalIOs = append(physicalIOs, id.String())
 	}
 	dev.SetPhysicalIOConfig(physicalIOs)
+	dev.SetDevModel(string(devModel.devModelType))
 	return nil
 }
 
@@ -152,6 +154,13 @@ func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx) ([]byte, error) {
 		}
 		systemAdapterConfigs = append(systemAdapterConfigs, systemAdapterConfig)
 	}
+	var configItems []*config.ConfigItem
+	for _, sshKey := range dev.GetSSHKeys() {
+		configItems = append(configItems, &config.ConfigItem{
+			Key:   "debug.enable.ssh",
+			Value: sshKey,
+		})
+	}
 	devConfig := &config.EdgeDevConfig{
 		Id: &config.UUIDandVersion{
 			Uuid:    dev.GetID().String(),
@@ -164,7 +173,7 @@ func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx) ([]byte, error) {
 		Base:              baseOS,
 		Reboot:            nil,
 		Backup:            nil,
-		ConfigItems:       nil,
+		ConfigItems:       configItems,
 		SystemAdapterList: systemAdapterConfigs,
 		DeviceIoList:      physicalIOs,
 		Manufacturer:      "",

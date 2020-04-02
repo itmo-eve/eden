@@ -4,6 +4,8 @@ import (
 	"github.com/satori/go.uuid"
 )
 
+type boc string
+
 //Ctx is base struct for device
 type Ctx struct {
 	id                uuid.UUID
@@ -13,6 +15,8 @@ type Ctx struct {
 	networks          []string
 	physicalIO        []string
 	systemAdapters    []string
+	sshKeys           []string
+	devModel          string
 }
 
 //CreateWithBaseConfig generate base config for device with id and associate with cloudCtx
@@ -39,6 +43,12 @@ func (cfg *Ctx) GetPhysicalIOs() []string { return cfg.physicalIO }
 
 //GetSystemAdapters return systemAdapters of device
 func (cfg *Ctx) GetSystemAdapters() []string { return cfg.systemAdapters }
+
+//GetSSHKeys return sshKeys of device
+func (cfg *Ctx) GetSSHKeys() []string { return cfg.sshKeys }
+
+//GetDevModel return devModel of device
+func (cfg *Ctx) GetDevModel() string { return cfg.devModel }
 
 //GetAdaptersForSwitch return adaptersForSwitch of device
 func (cfg *Ctx) GetAdaptersForSwitch() []string {
@@ -78,4 +88,15 @@ func (cfg *Ctx) SetPhysicalIOConfig(configIDs []string) *Ctx {
 func (cfg *Ctx) SetSystemAdaptersConfig(configIDs []string) *Ctx {
 	cfg.systemAdapters = configIDs
 	return cfg
+}
+
+//SetSSHKeys set sshKeys
+func (cfg *Ctx) SetSSHKeys(keys []string) *Ctx {
+	cfg.sshKeys = keys
+	return cfg
+}
+
+//SetDevModel set devModel
+func (cfg *Ctx) SetDevModel(devModel string) {
+	cfg.devModel = devModel
 }

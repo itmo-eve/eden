@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"github.com/lf-edge/eden/pkg/controller"
 	"github.com/lf-edge/eden/pkg/controller/einfo"
 	"github.com/lf-edge/eve/api/go/config"
@@ -26,21 +27,23 @@ func prepareNetworkInstance(ctx controller.Cloud, networkInstanceID string, netw
 		Activate:       true,
 		Port:           nil,
 		Cfg:            nil,
-		IpType:         config.AddressType_IPV4,
+		IpType:         config.AddressType_First,
 		Ip:             nil,
 	}
 	switch networkInstanceType {
 	case config.ZNetworkInstType_ZnetInstSwitch:
 		networkInstance.Port = &config.Adapter{
-			Type: config.PhyIoType_PhyIoNoop,
 			Name: model.GetFirstAdapterForSwitches(),
 		}
+		networkInstance.Cfg = &config.NetworkInstanceOpaqueConfig{}
+	case config.ZNetworkInstType_ZnetInstLocal:
+		networkInstance.IpType = config.AddressType_IPV4
+		networkInstance.Port = &config.Adapter{
+			Name: "uplink",
+		}
 		networkInstance.Ip = &config.Ipspec{
-			Dhcp:    config.DHCPType_DHCPNoop,
 			Subnet:  "10.1.0.0/24",
 			Gateway: "10.1.0.1",
-			Domain:  "",
-			Ntp:     "",
 			Dns:     []string{"10.1.0.1"},
 			DhcpRange: &config.IpRange{
 				Start: "10.1.0.2",
@@ -48,31 +51,14 @@ func prepareNetworkInstance(ctx controller.Cloud, networkInstanceID string, netw
 			},
 		}
 		networkInstance.Cfg = &config.NetworkInstanceOpaqueConfig{}
-	case config.ZNetworkInstType_ZnetInstLocal:
-		networkInstance.Port = &config.Adapter{
-			Type: config.PhyIoType_PhyIoNoop,
-			Name: "uplink",
-		}
-		networkInstance.Ip = &config.Ipspec{
-			Dhcp:    config.DHCPType_DHCPNoop,
-			Subnet:  "20.1.0.0/24",
-			Gateway: "20.1.0.1",
-			Domain:  "",
-			Ntp:     "",
-			Dns:     []string{"20.1.0.1"},
-			DhcpRange: &config.IpRange{
-				Start: "20.1.0.2",
-				End:   "20.1.0.254",
-			},
-		}
-		networkInstance.Cfg = &config.NetworkInstanceOpaqueConfig{}
 	case config.ZNetworkInstType_ZnetInstCloud:
+		networkInstance.IpType = config.AddressType_IPV4
 		networkInstance.Port = &config.Adapter{
 			Type: config.PhyIoType_PhyIoNoop,
 			Name: "uplink",
 		}
 		networkInstance.Ip = &config.Ipspec{
-			Dhcp:    config.DHCPType_DHCPNoop,
+			Dhcp:    config.DHCPType_DHCPNone,
 			Subnet:  "30.1.0.0/24",
 			Gateway: "30.1.0.1",
 			Domain:  "",
@@ -101,15 +87,16 @@ func TestNetworkInstance(t *testing.T) {
 		t.Fatal("Fail in controller prepare: ", err)
 	}
 
-	deviceModel, err := ctx.GetDevModel(controller.DevModelTypeQemu)
-	if err != nil {
-		t.Fatal("Fail in get deviceModel: ", err)
-	}
-
 	deviceCtx, err := ctx.GetDeviceFirst()
 	if err != nil {
 		t.Fatal("Fail in get first device: ", err)
 	}
+	devModel, err := ctx.GetDevModelByName(deviceCtx.GetDevModel())
+	if err != nil {
+		t.Fatal("Fail in get dev model: ", err)
+	}
+
+	var networkInstances []string
 	var networkInstanceTests = []struct {
 		networkInstanceID   string
 		networkInstanceName string
@@ -136,18 +123,15 @@ func TestNetworkInstance(t *testing.T) {
 	}
 	for _, tt := range networkInstanceTests {
 		t.Run(tt.networkInstanceName, func(t *testing.T) {
-
-			err = prepareNetworkInstance(ctx, tt.networkInstanceID, tt.networkInstanceName, tt.networkInstanceType, deviceModel)
+			err = prepareNetworkInstance(ctx, tt.networkInstanceID, tt.networkInstanceName, tt.networkInstanceType, devModel)
 			if err != nil {
 				t.Fatal("Fail in prepare network instance: ", err)
 			}
 
 			devUUID := deviceCtx.GetID()
-			err = ctx.ApplyDevModel(deviceCtx, deviceModel)
-			if err != nil {
-				t.Fatal("Fail in ApplyDevModel: ", err)
-			}
-			deviceCtx.SetNetworkInstanceConfig([]string{tt.networkInstanceID})
+			//append networkInstance for run all of them together
+			networkInstances = append(networkInstances, tt.networkInstanceID)
+			deviceCtx.SetNetworkInstanceConfig(networkInstances)
 			err = ctx.ConfigSync(deviceCtx)
 			if err != nil {
 				t.Fatal("Fail in sync config with controller: ", err)
@@ -158,8 +142,14 @@ func TestNetworkInstance(t *testing.T) {
 					t.Fatal("Fail in waiting for process start from info: ", err)
 				}
 			})
+			t.Run("Handled", func(t *testing.T) {
+				err = ctx.LogChecker(devUUID, map[string]string{"devId": devUUID.String(), "msg": fmt.Sprintf(".*handleNetworkInstanceModify\\(%s\\) done.*", tt.networkInstanceID), "level": "info"}, 600)
+				if err != nil {
+					t.Fatal("Fail in waiting for handleNetworkInstanceModify done from zedagent: ", err)
+				}
+			})
 			t.Run("Active", func(t *testing.T) {
-				err = ctx.InfoChecker(devUUID, map[string]string{"devId": devUUID.String(), "networkID": tt.networkInstanceID, "activated": "true"}, einfo.ZInfoNetworkInstance, 600)
+				err = ctx.InfoChecker(devUUID, map[string]string{"devId": devUUID.String(), "networkID": tt.networkInstanceID, "activated": "true"}, einfo.ZInfoNetworkInstance, 200)
 				if err != nil {
 					t.Fatal("Fail in waiting for activated state from info: ", err)
 				}

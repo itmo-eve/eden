@@ -6,6 +6,7 @@ import (
 	"github.com/lf-edge/eden/pkg/controller/adam"
 	"github.com/lf-edge/eden/pkg/utils"
 	uuid "github.com/satori/go.uuid"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,13 +17,15 @@ var (
 	adamPort string
 	adamDir  string
 	adamCA   string
+	sshKey   string
 )
 
 //envRead use environment variables for init controller
 //environment variable ADAM_IP - IP of adam
 //environment variable ADAM_PORT - PORT of adam
 //environment variable ADAM_DIST - directory of adam (absolute path)
-//environment variable ADAM_CA - CA of adam for https
+//environment variable ADAM_CA - CA file of adam for https
+//environment variable SSH_KEY - ssh public key for integrate into eve
 func envRead() error {
 	currentPath, err := os.Getwd()
 	adamIP = os.Getenv("ADAM_IP")
@@ -45,6 +48,7 @@ func envRead() error {
 	}
 
 	adamCA = os.Getenv("ADAM_CA")
+	sshKey = os.Getenv("SSH_KEY")
 	return nil
 }
 
@@ -71,14 +75,32 @@ func controllerPrepare() (ctx controller.Cloud, err error) {
 	if err != nil {
 		return ctrl, err
 	}
-	for _, dev := range devices {
-		devUUID, err := uuid.FromString(dev)
+	for _, devID := range devices {
+		devUUID, err := uuid.FromString(devID)
 		if err != nil {
 			return ctrl, err
 		}
-		err = ctrl.AddDevice(devUUID)
+		dev, err := ctrl.AddDevice(devUUID)
 		if err != nil {
 			return ctrl, err
+		}
+		if sshKey != "" {
+			b, err := ioutil.ReadFile(sshKey)
+			switch {
+			case err != nil && os.IsNotExist(err):
+				return nil, fmt.Errorf("sshKey file %s does not exist", sshKey)
+			case err != nil:
+				return nil, fmt.Errorf("error reading sshKey file %s: %v", sshKey, err)
+			}
+			dev.SetSSHKeys([]string{string(b)})
+		}
+		deviceModel, err := ctrl.GetDevModel(controller.DevModelTypeQemu)
+		if err != nil {
+			return ctrl, fmt.Errorf("fail in get deviceModel: %s", err)
+		}
+		err = ctrl.ApplyDevModel(dev, deviceModel)
+		if err != nil {
+			return ctrl, fmt.Errorf("fail in ApplyDevModel: %s", err)
 		}
 	}
 	return ctrl, nil

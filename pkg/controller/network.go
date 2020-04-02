@@ -17,16 +17,16 @@ func (cloud *CloudCtx) getNetworkInd(id string) (networkConfigInd int, err error
 
 //GetNetworkConfig return NetworkConfig config from cloud by ID
 func (cloud *CloudCtx) GetNetworkConfig(id string) (networkConfig *config.NetworkConfig, err error) {
-	networkInstanceConfigInd, err := cloud.getNetworkInd(id)
+	networkConfigInd, err := cloud.getNetworkInd(id)
 	if err != nil {
 		return nil, err
 	}
-	return cloud.networks[networkInstanceConfigInd], nil
+	return cloud.networks[networkConfigInd], nil
 }
 
 //AddNetworkConfig add NetworkConfig config to cloud
-func (cloud *CloudCtx) AddNetworkConfig(networkInstanceConfig *config.NetworkConfig) error {
-	cloud.networks = append(cloud.networks, networkInstanceConfig)
+func (cloud *CloudCtx) AddNetworkConfig(networkConfig *config.NetworkConfig) error {
+	cloud.networks = append(cloud.networks, networkConfig)
 	return nil
 }
 

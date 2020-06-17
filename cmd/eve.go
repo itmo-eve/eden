@@ -50,10 +50,14 @@ var startEveCmd = &cobra.Command{
 			eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
 			evePidFile = utils.ResolveAbsPath(viper.GetString("eve.pid"))
 			eveLogFile = utils.ResolveAbsPath(viper.GetString("eve.log"))
+			devModel = viper.GetString("eve.devmodel")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		if devModel == defaults.DefaultRPIModel {
+			return
+		}
 		qemuCommand := ""
 		qemuOptions := fmt.Sprintf("-display none -serial telnet:localhost:%d,server,nowait -nodefaults -no-user-config ", eveTelnetPort)
 		if qemuSMBIOSSerial != "" {
@@ -120,12 +124,15 @@ var stopEveCmd = &cobra.Command{
 		}
 		if viperLoaded {
 			evePidFile = utils.ResolveAbsPath(viper.GetString("eve.pid"))
+			devModel = viper.GetString("eve.devmodel")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := utils.StopEVEQemu(evePidFile); err != nil {
-			log.Errorf("cannot stop EVE: %s", err)
+		if devModel != defaults.DefaultRPIModel {
+			if err := utils.StopEVEQemu(evePidFile); err != nil {
+				log.Errorf("cannot stop EVE: %s", err)
+			}
 		}
 	},
 }

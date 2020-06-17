@@ -41,6 +41,9 @@ var configAddCmd = &cobra.Command{
 	Long:  `Generate config context for eden.`,
 	Args:  cobra.ExactValidArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if devModel != defaults.DefaultRPIModel && devModel != defaults.DefaultEVEModel {
+			log.Fatal("unsupported model")
+		}
 		var err error
 		if configFile == "" {
 			configFile, err = utils.DefaultConfigPath()
@@ -76,6 +79,7 @@ var configAddCmd = &cobra.Command{
 			eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
 			qemuHostFwd = viper.GetStringMapString("eve.hostfwd")
 			qemuFileToSave = utils.ResolveAbsPath(viper.GetString("eve.qemu-config"))
+			devModel = viper.GetString("eve.devmodel")
 		}
 		return nil
 	},
@@ -107,6 +111,15 @@ var configAddCmd = &cobra.Command{
 		_, err = utils.LoadConfigFile(configFile)
 		if err != nil {
 			log.Fatalf("error reading config: %s", err)
+		}
+		if devModel == defaults.DefaultRPIModel {
+			viper.Set("eve.hostfwd", map[string]string{})
+			viper.Set("eve.devmodel", defaults.DefaultRPIModel)
+			viper.Set("eve.arch", "arm64")
+			viper.Set("eve.serial", "*")
+			if err = viper.WriteConfig(); err != nil {
+				log.Fatalf("error writing config: %s", err)
+			}
 		}
 		context.SetContext(currentContextName)
 		if _, err := os.Stat(qemuFileToSave); os.IsNotExist(err) {
@@ -422,6 +435,7 @@ func configInit() {
 	configSetCmd.Flags().StringVar(&contextValueSet, "value", "", "will set value of key from current config context")
 	configCmd.AddCommand(configListCmd)
 	configCmd.AddCommand(configAddCmd)
+	configAddCmd.Flags().StringVar(&devModel, "devmodel", defaults.DefaultEVEModel, fmt.Sprintf("device model (%s or %s)", defaults.DefaultRPIModel, defaults.DefaultEVEModel))
 	configAddCmd.Flags().StringVar(&contextFile, "file", "", "file with config to add")
 	configAddCmd.Flags().StringVarP(&qemuFileToSave, "qemu-config", "", defaults.DefaultQemuFileToSave, "file to save config")
 	configAddCmd.Flags().IntVarP(&qemuCpus, "cpus", "", defaults.DefaultQemuCpus, "cpus")

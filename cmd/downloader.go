@@ -44,6 +44,7 @@ var downloaderCmd = &cobra.Command{
 			eveHV = viper.GetString("eve.hv")
 			adamDist = utils.ResolveAbsPath(viper.GetString("adam.dist"))
 			eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
+			devModel = viper.GetString("eve.devmodel")
 			if newDownload {
 				outputDir = filepath.Dir(eveImageFile)
 			} else {
@@ -78,13 +79,20 @@ var downloaderCmd = &cobra.Command{
 			if err := utils.SaveImage(efiImage, outputDir, ""); err != nil {
 				log.Fatalf("SaveImage: %s", err)
 			}
-			if fileName, err := utils.GenEVEImage(image, outputDir, "live", "qcow2", configPath); err != nil {
+			format := "qcow2"
+			size := defaults.DefaultEVEImageSize
+			if devModel == defaults.DefaultRPIModel {
+				format = "raw"
+				size = 0
+			}
+			if fileName, err := utils.GenEVEImage(image, outputDir, "live", format, configPath, size); err != nil {
 				log.Fatalf("GenEVEImage: %s", err)
 			} else {
-				log.Debug(eveImageFile)
-				log.Debug(fileName)
 				if err = utils.CopyFile(fileName, eveImageFile); err != nil {
 					log.Fatalf("cannot copy image %s", err)
+				}
+				if devModel == defaults.DefaultRPIModel {
+					log.Infof("Write file %s to sd (it is in raw format)", eveImageFile)
 				}
 			}
 		} else {

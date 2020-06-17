@@ -22,6 +22,8 @@ var (
 	force     bool
 	dryRun    bool
 	apiV1     bool
+
+	devModel string
 )
 
 var setupCmd = &cobra.Command{
@@ -64,6 +66,8 @@ var setupCmd = &cobra.Command{
 			qemuFileToSave = utils.ResolveAbsPath(viper.GetString("eve.qemu-config"))
 			//eserver
 			eserverImageDist = utils.ResolveAbsPath(viper.GetString("eden.images.dist"))
+
+			devModel = viper.GetString("eve.devmodel")
 		}
 		return nil
 	},
@@ -107,6 +111,9 @@ var setupCmd = &cobra.Command{
 
 			}
 		} else {
+			if devModel == defaults.DefaultRPIModel {
+				eveHV = fmt.Sprintf("rpi-%s", eveHV)
+			}
 			if _, err := os.Lstat(eveImageFile); os.IsNotExist(err) {
 				if err := utils.DownloadEveFormDocker(command, eveDist, eveArch, eveHV, eveTag, defaults.DefaultNewBuildProcess); err != nil {
 					log.Errorf("cannot download EVE: %s", err)

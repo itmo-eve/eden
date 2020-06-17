@@ -57,6 +57,7 @@ var startCmd = &cobra.Command{
 			qemuConfigFile = utils.ResolveAbsPath(viper.GetString("eve.qemu-config"))
 			evePidFile = utils.ResolveAbsPath(viper.GetString("eve.pid"))
 			eveLogFile = utils.ResolveAbsPath(viper.GetString("eve.log"))
+			devModel = viper.GetString("eve.devmodel")
 		}
 		return nil
 	},
@@ -94,10 +95,12 @@ var startCmd = &cobra.Command{
 		} else {
 			log.Infof("Eserver is running and accesible on port %d", eserverPort)
 		}
-		if err := utils.StartEVEQemu(command, qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial, qemuAccel, qemuConfigFile, eveLogFile, evePidFile); err != nil {
-			log.Errorf("cannot start eve: %s", err)
-		} else {
-			log.Infof("EVE is starting")
+		if devModel != defaults.DefaultRPIModel {
+			if err := utils.StartEVEQemu(command, qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial, qemuAccel, qemuConfigFile, eveLogFile, evePidFile); err != nil {
+				log.Errorf("cannot start eve: %s", err)
+			} else {
+				log.Infof("EVE is starting")
+			}
 		}
 	},
 }

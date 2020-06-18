@@ -6,61 +6,68 @@ import (
 	"time"
 )
 
-type AssertArgs interface{}
+type AssertFunc func() bool
 
-type AssertFunc func(t *testing.T, tc *TestContext, description string, args AssertArgs)
-
-type Assert struct {
-	Descr string
-	Func  AssertFunc
-	Args  AssertArgs
+func TimeWait(t *testing.T, timeout time.Duration) AssertFunc {
+	t.Logf("timeWait %s formed\n", timeout)
+	return func() bool {
+		t.Logf("timeWait %s started\n", timeout)
+		time.Sleep(timeout)
+		t.Logf("timeWait %s finished\n", timeout)
+		return true
+	}
 }
 
-var (
-	asserts = []Assert{}
-)
-
-func timeWait(t *testing.T, tc *TestContext, description string, args AssertArgs) {
-	timeout := args.(time.Duration)
-	t.Logf("timeWait %s started\n", timeout)
-	time.Sleep(timeout)
-	t.Fatalf("timeWait %s finished\n", timeout)
+//createAssertSuccess method to return immediately and simply register a
+//function with standard boolean return value handling.
+func (tc *TestContext) CreateAssertSuccess(assert AssertFunc) {
+	tc.asserts_sucess = append(tc.asserts_sucess, assert)
 }
 
-//AssertInfo method to return immediately and simply register a function with
-//arguments.
-func (tc *TestContext) AssertAdd(t *testing.T, descr string, assert AssertFunc, args AssertArgs) {
-	a := Assert{Descr: descr, Func: assert, Args: args}
-	asserts = append(asserts, a)
-}
-
-//AssertInfo method to return immediately and simply register a listener
-//function that would check every incoming Info message and either exit
-//with success on one of them OR exit with failure.
-func (tc *TestContext) AssertInfo(t *testing.T, descr string, assert AssertFunc) {
-	tc.AssertAdd(t, descr, assert, nil)
+//createAssertSuccess method to return immediately and simply register a
+//function with inversed boolean return value handling.
+func (tc *TestContext) CreateAssertFail(assert AssertFunc) {
+	tc.asserts_fail = append(tc.asserts_fail, assert)
 }
 
 //WaitForAsserts blocking execution until the time elapses or asserts fires
 func (tc *TestContext) WaitForAsserts(t *testing.T, secs int) {
 	timeout := time.Duration(secs) * time.Second
-	t.Log("Timewait: ", timeout)
+	t.Log("WaitForAsserts timewait: ", timeout)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel() // cancel when we are finished tasks
 
-	tc.AssertAdd(t, "Test's timewait", timeWait, AssertArgs(timeout))
+	tc.CreateAssertFail(TimeWait(t, timeout))
 
-	for _, a := range asserts {
-		go func(descr string, afn AssertFunc, args AssertArgs) {
-			t.Logf("WaitForAsserts starting '%s'\n", descr)
-			afn(t, tc, descr, args)
+	result := make(chan bool)
+
+	for _, s := range tc.asserts_sucess {
+		go func(afn AssertFunc) {
+			t.Logf("AssertFunc+ %q", afn)
+			res := afn()
+			result <- res
 			cancel()
-			return
-		}(a.Descr, a.Func, a.Args)
+			t.Logf("AssertFunc+ -> %t", res)
+		}(s)
+	}
+
+	for _, f := range tc.asserts_fail {
+		go func(afn AssertFunc) {
+			t.Logf("AssertFunc- %q", afn)
+			res := afn()
+			result <- !res
+			cancel()
+			t.Logf("AssertFunc- -> %t", res)
+		}(f)
 	}
 
 	select {
+	case res := <-result:
+		t.Log("assertFunc result: ", res)
+		if !res {
+			t.Fatal("assertFunc failed")
+		}
 	case <-time.After(timeout):
 		t.Fatal("assertFunc terminated by timewat", timeout)
 	case <-ctx.Done():

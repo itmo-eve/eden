@@ -112,7 +112,7 @@ func TestReboot(t *testing.T) {
 	// Info message and either exit with success on one of them OR
 	// exit with failure. However both of these events may happen minutes
 	// after the following call is made:
-	tc.AssertInfo(t, "expected reboot to happen", CheckRebootInfo)
+	tc.CreateAssertSuccess(projects.CheckReboots(t, tc, edgeNode, 1))
 
 	// now we're blocking until the time elapses or asserts fires
 	//tc.WaitForAsserts(t, 60)  // this is guarantee to exit under 60 seconds

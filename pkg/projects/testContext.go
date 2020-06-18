@@ -30,9 +30,11 @@ func GetControllerMode(controllerMode string) (modeType, modeURL string, err err
 
 //TestContext is main structure for running tests
 type TestContext struct {
-	cloud   controller.Cloud
-	project *Project
-	nodes   []*device.Ctx
+	cloud          controller.Cloud
+	project        *Project
+	nodes          []*device.Ctx
+	asserts_sucess []AssertFunc
+	asserts_fail   []AssertFunc
 }
 
 //NewTestContext creates new TestContext

@@ -69,21 +69,22 @@ var downloaderCmd = &cobra.Command{
 			log.Fatalf("ImagePull (%s): %s", image, err)
 		}
 		if newDownload {
-			if err := utils.PullImage(efiImage); err != nil {
-				log.Fatalf("ImagePull (%s): %s", efiImage, err)
-			}
 			configPath := filepath.Join(adamDist, "run", "config")
 			if _, err := os.Stat(configPath); os.IsNotExist(err) {
 				log.Fatalf("directory not exists: %s", configPath)
-			}
-			if err := utils.SaveImage(efiImage, outputDir, ""); err != nil {
-				log.Fatalf("SaveImage: %s", err)
 			}
 			format := "qcow2"
 			size := defaults.DefaultEVEImageSize
 			if devModel == defaults.DefaultRPIModel {
 				format = "raw"
 				size = 0
+			} else {
+				if err := utils.PullImage(efiImage); err != nil {
+					log.Fatalf("ImagePull (%s): %s", efiImage, err)
+				}
+				if err := utils.SaveImage(efiImage, outputDir, ""); err != nil {
+					log.Fatalf("SaveImage: %s", err)
+				}
 			}
 			if fileName, err := utils.GenEVEImage(image, outputDir, "live", format, configPath, size); err != nil {
 				log.Fatalf("GenEVEImage: %s", err)

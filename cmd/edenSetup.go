@@ -96,7 +96,11 @@ var setupCmd = &cobra.Command{
 		}
 		imageFormat := "qcow2"
 		if devModel == defaults.DefaultRPIModel {
-			eveHV = fmt.Sprintf("rpi-%s", eveHV)
+			if eveHV == "kvm" {
+				eveHV = fmt.Sprintf("rpi-%s", eveHV)
+			} else {
+				eveHV = "rpi"
+			}
 			imageFormat = "raw"
 		}
 		if !download {

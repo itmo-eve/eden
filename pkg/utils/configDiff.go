@@ -12,7 +12,7 @@ adam:
     domain: {{ .DefaultDomain }}
 
     #ip of adam for EVE access
-    eve-ip: {{ .EVEIP }}
+    eve-ip: {{ .IP }}
 
     #ip of adam for EDEN access
     ip: {{ .IP }}

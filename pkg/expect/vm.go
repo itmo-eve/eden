@@ -2,6 +2,7 @@ package expect
 
 import (
 	"encoding/base64"
+	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eve/api/go/config"
 	uuid "github.com/satori/go.uuid"
 )
@@ -29,7 +30,9 @@ func (exp *appExpectation) createAppInstanceConfigVM(img *config.Image, netInstI
 			Acls:      acls,
 		}},
 	}
-	app.Fixedresources.VirtualizationMode = config.VmMode_HVM
+	if exp.ctrl.GetVars().DevModel != defaults.DefaultRPIModel {
+		app.Fixedresources.VirtualizationMode = config.VmMode_HVM
+	}
 	app.Drives = []*config.Drive{{
 		Image:    img,
 		Readonly: false,

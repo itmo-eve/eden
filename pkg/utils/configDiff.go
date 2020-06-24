@@ -34,7 +34,7 @@ eve:
     devmodel: ZedVirtual-4G
 
     #file to save qemu config
-    qemu-config: {{ .EdenDir }}/qemu.conf
+    qemu-config: qemu.conf
 
     #EVE arch (amd64/arm64)
     arch: {{ .Arch }}
@@ -52,7 +52,7 @@ eve:
     cert: certs/onboard.cert.pem
 
     #EVE firmware
-    firmware: {{ .DefaultEVEDist }}/dist/amd64/OVMF.fd
+    firmware: [{{ .DefaultEVEDist }}/dist/amd64/OVMF_CODE.fd,{{ .DefaultEVEDist }}/dist/amd64/OVMF_VARS.fd]
 
     #forward of ports in qemu [(HOST:EVE)]
     hostfwd:

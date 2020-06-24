@@ -181,7 +181,7 @@ eve:
     dist: {{ .DefaultEVEDist }}
 
     #file to save qemu config
-    qemu-config: {{ .EdenDir }}/qemu.conf
+    qemu-config: qemu.conf
 
     #uuid of EVE to use in cert
     uuid: {{ .UUID }}
@@ -190,7 +190,7 @@ eve:
     image-file: {{ .DefaultEVEDist }}/dist/amd64/live.qcow2
 
     #dtb directory of EVE
-    dtb-part: 
+    dtb-part: ""
 
     #config part of EVE
     config-part: {{ .DefaultAdamDist }}/run/config
@@ -249,6 +249,9 @@ redis:
 
     #directory to use for redis persistence
     dist: {{ .DefaultRedisDist }}
+
+    #force redis rebuild
+    force: true
 `
 
 //DefaultEdenDir returns path to default directory

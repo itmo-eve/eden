@@ -27,12 +27,94 @@ var (
 	contextValueSet string
 	contextKeyGet   string
 	contextAllGet   bool
+	distPath        string
 )
 
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "work with config",
 	Long:  `Work with config.`,
+}
+
+func setDistPath(configFile string, pathToSet string) {
+	if pathToSet != "" {
+		pathAbs, err := filepath.Abs(pathToSet)
+		if err != nil {
+			log.Fatal("Path %s is not available!", pathToSet)
+		}
+		_, err = utils.LoadConfigFile(configFile)
+		if err != nil {
+			log.Fatalf("error reading config: %s", err)
+		}
+		viper.Set("eden.root", pathAbs)
+		if err = viper.WriteConfig(); err != nil {
+			log.Fatalf("error writing config: %s", err)
+		}
+	}
+}
+
+func generateQemuConfig(configFile string) {
+	_, err := utils.LoadConfigFile(configFile)
+	if err != nil {
+		log.Fatalf("error reading config: %s", err)
+	}
+	qemuFirmware = viper.GetStringSlice("eve.firmware")
+	qemuConfigPath = utils.ResolveAbsPath(viper.GetString("eve.config-part"))
+	qemuDTBPath = utils.ResolveAbsPath(viper.GetString("eve.dtb-part"))
+	eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
+	qemuHostFwd = viper.GetStringMapString("eve.hostfwd")
+	qemuFileToSave = utils.ResolveAbsPath(viper.GetString("eve.qemu-config"))
+	if _, err := os.Stat(qemuFileToSave); os.IsNotExist(err) {
+		if err := os.MkdirAll(filepath.Dir(qemuFileToSave), 0755); err != nil {
+			log.Fatal(err)
+		}
+		f, err := os.Create(qemuFileToSave)
+		if err != nil {
+			log.Fatal(err)
+		}
+		qemuDTBPathAbsolute := ""
+		if qemuDTBPath != "" {
+			qemuDTBPathAbsolute, err = filepath.Abs(qemuDTBPath)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		var qemuFirmwareParam []string
+		for _, el := range qemuFirmware {
+			qemuFirmwarePathAbsolute := utils.ResolveAbsPath(el)
+			if err != nil {
+				log.Fatal(err)
+			}
+			qemuFirmwareParam = append(qemuFirmwareParam, qemuFirmwarePathAbsolute)
+		}
+		//generate netdevs with unused subnets
+		nets, err := utils.GetSubnetsNotUsed(2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		settings := utils.QemuSettings{
+			DTBDrive: qemuDTBPathAbsolute,
+			Firmware: qemuFirmwareParam,
+			MemoryMB: qemuMemory,
+			CPUs:     qemuCpus,
+			HostFWD:  qemuHostFwd,
+			NetDevs:  nets,
+		}
+		conf, err := settings.GenerateQemuConfig()
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = f.Write(conf)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := f.Close(); err != nil {
+			log.Fatal(err)
+		}
+		log.Infof("QEMU config file generated: %s", qemuFileToSave)
+	} else {
+		log.Debugf("QEMU config already exists: %s", qemuFileToSave)
+	}
 }
 
 var configAddCmd = &cobra.Command{
@@ -63,6 +145,7 @@ var configAddCmd = &cobra.Command{
 				log.Fatalf("fail in generate yaml: %s", err.Error())
 			} else {
 				log.Infof("Config file generated: %s", configFile)
+				setDistPath(configFile, distPath)
 			}
 		}
 		viperLoaded, err := utils.LoadConfigFile(configFile)
@@ -99,64 +182,14 @@ var configAddCmd = &cobra.Command{
 					log.Fatalf("error generate config: %s", err)
 				} else {
 					log.Infof("Context file generated: %s", configFile)
+					setDistPath(configFile, distPath)
 				}
 			} else {
 				log.Debugf("Config file already exists %s", configFile)
 			}
 		}
-		_, err = utils.LoadConfigFile(configFile)
-		if err != nil {
-			log.Fatalf("error reading config: %s", err)
-		}
-		context.SetContext(currentContextName)
-		if _, err := os.Stat(qemuFileToSave); os.IsNotExist(err) {
-			f, err := os.Create(qemuFileToSave)
-			if err != nil {
-				log.Fatal(err)
-			}
-			qemuDTBPathAbsolute := ""
-			if qemuDTBPath != "" {
-				qemuDTBPathAbsolute, err = filepath.Abs(qemuDTBPath)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			var qemuFirmwareParam []string
-			for _, el := range qemuFirmware {
-				qemuFirmwarePathAbsolute := utils.ResolveAbsPath(el)
-				if err != nil {
-					log.Fatal(err)
-				}
-				qemuFirmwareParam = append(qemuFirmwareParam, qemuFirmwarePathAbsolute)
-			}
-			//generate netdevs with unused subnets
-			nets, err := utils.GetSubnetsNotUsed(2)
-			if err != nil {
-				log.Fatal(err)
-			}
-			settings := utils.QemuSettings{
-				DTBDrive: qemuDTBPathAbsolute,
-				Firmware: qemuFirmwareParam,
-				MemoryMB: qemuMemory,
-				CPUs:     qemuCpus,
-				HostFWD:  qemuHostFwd,
-				NetDevs:  nets,
-			}
-			conf, err := settings.GenerateQemuConfig()
-			if err != nil {
-				log.Fatal(err)
-			}
-			_, err = f.Write(conf)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if err := f.Close(); err != nil {
-				log.Fatal(err)
-			}
-			log.Infof("QEMU config file generated: %s", qemuFileToSave)
-		} else {
-			log.Debugf("QEMU config already exists: %s", qemuFileToSave)
-		}
+		defer context.SetContext(currentContextName)
+		generateQemuConfig(configFile)
 	},
 }
 
@@ -431,6 +464,7 @@ func configInit() {
 	configAddCmd.Flags().StringVarP(&qemuDTBPath, "dtb-part", "", "", "path for device tree drive (for arm)")
 	configAddCmd.Flags().StringToStringVarP(&qemuHostFwd, "eve-hostfwd", "", defaults.DefaultQemuHostFwd, "port forward map")
 	configAddCmd.Flags().StringVarP(&qemuSocketPath, "qmp", "", "", "use qmp socket with path")
+	configAddCmd.Flags().StringVarP(&distPath, "dist", "", "", "Custom dist folder")
 	configCmd.AddCommand(configResetCmd)
 	configCmd.AddCommand(configEditCmd)
 }

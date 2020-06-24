@@ -80,7 +80,12 @@ var downloaderCmd = &cobra.Command{
 				size = 0
 			} else {
 				if err := utils.PullImage(efiImage); err != nil {
-					log.Fatalf("ImagePull (%s): %s", efiImage, err)
+					log.Infof("cannot pull %s", efiImage)
+					efiImage = fmt.Sprintf("lfedge/eve-uefi") //try with latest version of OVMF
+					log.Infof("will retry with %s", efiImage)
+					if err := utils.PullImage(efiImage); err != nil {
+						log.Fatalf("ImagePull (%s): %s", efiImage, err)
+					}
 				}
 				if err := utils.SaveImage(efiImage, outputDir, ""); err != nil {
 					log.Fatalf("SaveImage: %s", err)

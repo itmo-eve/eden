@@ -18,6 +18,7 @@ type ProcMetricFunc func(metric *metrics.ZMetricMsg) error
 
 type absFunc struct {
 	disabled bool
+	states   bool
 	proc     interface{}
 }
 
@@ -29,6 +30,18 @@ type processingBus struct {
 
 func initBus(tc *TestContext) *processingBus {
 	return &processingBus{tc: tc, proc: map[*device.Ctx][]*absFunc{}, wg: &sync.WaitGroup{}}
+}
+
+func (lb *processingBus) clean() {
+	for _, funcs := range lb.proc {
+		for _, el := range funcs {
+			if el.states || el.disabled {
+				continue
+			}
+			el.disabled = true
+		}
+	}
+	lb.wg = &sync.WaitGroup{}
 }
 
 func (lb *processingBus) processReturn(edgeNode *device.Ctx, procFunc *absFunc, result error) {

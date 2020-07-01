@@ -150,6 +150,13 @@ func (ctx *TestContext) AddNode(node *device.Ctx) {
 	ctx.nodes = append(ctx.nodes, node)
 }
 
+//UpdateEdgeNode update edge node
+func (ctx *TestContext) UpdateEdgeNode(edgeNode *device.Ctx, opts ...EdgeNodeOption) {
+	for _, opt := range opts {
+		opt(edgeNode)
+	}
+}
+
 //NewEdgeNode creates edge node
 func (ctx *TestContext) NewEdgeNode(opts ...EdgeNodeOption) *device.Ctx {
 	d := device.CreateEdgeNode()
@@ -192,6 +199,7 @@ func (tc *TestContext) WaitForProc(secs int) {
 		}
 		return
 	case <-time.After(timeout):
+		tc.procBus.clean()
 		if len(tc.tests) == 0 {
 			log.Fatalf("WaitForProc terminated by timeout %s", timeout)
 		}
@@ -217,6 +225,11 @@ func (tc *TestContext) AddProcMetric(edgeNode *device.Ctx, processFunction ProcM
 	tc.procBus.addProc(edgeNode, processFunction)
 }
 
+//AddProcTimer add processFunction, that will fire with time intervals for edgeNode
+func (tc *TestContext) AddProcTimer(edgeNode *device.Ctx, processFunction ProcTimerFunc) {
+	tc.procBus.addProc(edgeNode, processFunction)
+}
+
 //StartTrackingState init function for state monitoring
 //if onlyNewElements set no use old information from controller
 func (tc *TestContext) StartTrackingState(onlyNewElements bool) {
@@ -232,8 +245,8 @@ func (tc *TestContext) StartTrackingState(onlyNewElements bool) {
 		if _, exists := tc.procBus.proc[dev]; !exists {
 			tc.procBus.initCheckers(dev)
 		}
-		tc.procBus.proc[dev] = append(tc.procBus.proc[dev], &absFunc{proc: curState.GetInfoProcessingFunction(), disabled: false})
-		tc.procBus.proc[dev] = append(tc.procBus.proc[dev], &absFunc{proc: curState.GetMetricProcessingFunction(), disabled: false})
+		tc.procBus.proc[dev] = append(tc.procBus.proc[dev], &absFunc{proc: curState.GetInfoProcessingFunction(), disabled: false, states: true})
+		tc.procBus.proc[dev] = append(tc.procBus.proc[dev], &absFunc{proc: curState.GetMetricProcessingFunction(), disabled: false, states: true})
 	}
 }
 

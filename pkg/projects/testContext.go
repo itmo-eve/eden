@@ -225,6 +225,11 @@ func (tc *TestContext) AddProcMetric(edgeNode *device.Ctx, processFunction ProcM
 	tc.procBus.addProc(edgeNode, processFunction)
 }
 
+//AddProcTimer add processFunction, that will fire with time intervals for edgeNode
+func (tc *TestContext) AddProcTimer(edgeNode *device.Ctx, processFunction ProcTimerFunc) {
+	tc.procBus.addProc(edgeNode, processFunction)
+}
+
 //StartTrackingState init function for state monitoring
 //if onlyNewElements set no use old information from controller
 func (tc *TestContext) StartTrackingState(onlyNewElements bool) {

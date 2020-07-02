@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/docker/docker/pkg/namesgenerator"
-	"github.com/lf-edge/eden/pkg/controller/elog"
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/device"
 	"github.com/lf-edge/eden/pkg/expect"
@@ -139,15 +138,15 @@ func requestApp(ip string) error {
 	}
 }
 
-func getEVEIP(devModel string) projects.ProcInfoFunc {
-	return func(msg *info.ZInfoMsg) error {
-		if devModel == defaults.DefaultRPIModel {
-			if msg.Ztype == info.ZInfoTypes_ZiDevice {
-				if len(msg.GetDinfo().Network) > 0 {
-					if msg.GetDinfo().Network[0] != nil {
-						fmt.Println(msg.GetDinfo().Network)
-						if len(msg.GetDinfo().Network[0].IPAddrs) > 0 {
-							ip, _, err := net.ParseCIDR(msg.GetDinfo().Network[0].IPAddrs[0])
+func getEVEIP(edgeNode *device.Ctx) projects.ProcTimerFunc {
+	return func() error {
+		if edgeNode.GetDevModel() == defaults.DefaultRPIModel {
+			dInfo := tc.GetState(edgeNode).GetDinfo()
+			if dInfo != nil {
+				if len(dInfo.Network) > 0 {
+					if dInfo.Network[0] != nil {
+						if len(dInfo.Network[0].IPAddrs) > 0 {
+							ip, _, err := net.ParseCIDR(dInfo.Network[0].IPAddrs[0])
 							if err != nil {
 								return nil
 							}
@@ -165,8 +164,8 @@ func getEVEIP(devModel string) projects.ProcInfoFunc {
 	}
 }
 
-func checkAppAccess() projects.ProcLogFunc {
-	return func(msg *elog.LogItem) error {
+func checkAppAccess() projects.ProcTimerFunc {
+	return func() error {
 		if externalIP == "" {
 			return nil
 		}
@@ -217,11 +216,11 @@ func TestDockerStart(t *testing.T) {
 
 	t.Log("Add function to obtain EVE IP")
 
-	tc.AddProcInfo(edgeNode, getEVEIP(edgeNode.GetDevModel()))
+	tc.AddProcTimer(edgeNode, getEVEIP(edgeNode))
 
 	t.Log("Add trying to access app via http")
 
-	tc.AddProcLog(edgeNode, checkAppAccess())
+	tc.AddProcTimer(edgeNode, checkAppAccess())
 
 	tc.WaitForProc(*timewait)
 }
@@ -230,6 +229,10 @@ func TestDockerDelete(t *testing.T) {
 	edgeNode := tc.GetEdgeNode(tc.WithTest(t))
 
 	tc.ConfigSync(edgeNode)
+
+	t.Logf("Add waiting for app %s absent", appName)
+
+	tc.AddProcInfo(edgeNode, checkAppAbsent(appName))
 
 	for id, appUUID := range edgeNode.GetApplicationInstances() {
 		appConfig, _ := tc.GetController().GetApplicationInstanceConfig(appUUID)
@@ -242,10 +245,6 @@ func TestDockerDelete(t *testing.T) {
 			break
 		}
 	}
-
-	t.Log("Add waiting for app absent")
-
-	tc.AddProcInfo(edgeNode, checkAppAbsent(appName))
 
 	tc.WaitForProc(*timewait)
 }

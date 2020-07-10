@@ -3,12 +3,14 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"github.com/lf-edge/eden/pkg/defaults"
 	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func dockerSubnetPattern() (cmd string, args []string) {
@@ -154,4 +156,24 @@ func GetFileSizeUrl(url string) int64 {
 	}
 	size, _ := strconv.Atoi(resp.Header.Get("Content-Length"))
 	return int64(size)
+}
+
+func RepeatableAttempt(client *http.Client, req *http.Request) (response *http.Response, err error) {
+	maxRepeat := defaults.DefaultRepeatCount
+	delayTime := defaults.DefaultRepeatTimeout
+
+	for i := 0; i < maxRepeat; i++ {
+		timer := time.AfterFunc(2*delayTime, func() {
+			i = 0
+		})
+		resp, err := client.Do(req)
+		if err == nil {
+			return resp, nil
+		}
+		log.Debugf("error %s URL %s: %v", req.Method, req.RequestURI, err)
+		timer.Stop()
+		log.Infof("Attempt to re-establish connection (%d) of (%d)", i, maxRepeat)
+		time.Sleep(delayTime)
+	}
+	return nil, fmt.Errorf("all connection attempts failed")
 }

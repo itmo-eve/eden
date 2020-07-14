@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lf-edge/eden/eserver/api"
 	"github.com/lf-edge/eden/eserver/pkg/manager"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
@@ -44,12 +45,32 @@ func (h *adminHandler) addFromUrl(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(name))
 }
 
-func (h *adminHandler) getFileStatus(w http.ResponseWriter, r *http.Request) {
-	u := mux.Vars(r)["filename"]
-	fileInfo, err := h.manager.GetFileInfo(u)
+func (h *adminHandler) addFromFile(w http.ResponseWriter, r *http.Request) {
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		wrapError(err, w)
 		return
+	}
+	defer file.Close()
+	fileInfo := h.manager.AddFileFromMultipart(file, header)
+	if fileInfo.Error != "" {
+		log.Error(fileInfo.Error)
+	}
+	out, err := json.Marshal(fileInfo)
+	if err != nil {
+		wrapError(err, w)
+		return
+	}
+	w.Header().Add(contentType, mimeTextPlain)
+	w.WriteHeader(http.StatusOK)
+	w.Write(out)
+}
+
+func (h *adminHandler) getFileStatus(w http.ResponseWriter, r *http.Request) {
+	u := mux.Vars(r)["filename"]
+	fileInfo := h.manager.GetFileInfo(u)
+	if fileInfo.Error != "" {
+		log.Error(fileInfo.Error)
 	}
 	out, err := json.Marshal(fileInfo)
 	if err != nil {

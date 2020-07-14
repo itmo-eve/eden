@@ -14,6 +14,14 @@ type EServer struct {
 	Manager *manager.EServerManager
 }
 
+// log the request and client
+func logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("requested %s", r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
+}
+
 //Start http server
 //  /admin/list endpoint returns list of files
 //  /admin/add-from-url endpoint fires download
@@ -35,8 +43,11 @@ func (s *EServer) Start() {
 
 	ad := router.PathPrefix("/admin").Subrouter()
 
+	router.Use(logRequest)
+
 	ad.HandleFunc("/list", admin.list).Methods("GET")
 	ad.HandleFunc("/add-from-url", admin.addFromUrl).Methods("POST")
+	ad.HandleFunc("/add-from-file", admin.addFromFile).Methods("POST")
 	ad.HandleFunc("/status/{filename}", admin.getFileStatus).Methods("GET")
 
 	router.HandleFunc("/eserver/{filename}", api.getFile).Methods("GET")

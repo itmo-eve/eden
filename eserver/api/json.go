@@ -16,4 +16,6 @@ type FileInfo struct {
 	FileName string `json:"filename,omitempty"`
 	//ISReady indicates status of image
 	ISReady bool `json:"ready"`
+	//Error contains errors
+	Error string `json:"error,omitempty"`
 }

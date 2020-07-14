@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"github.com/lf-edge/eden/pkg/defaults"
 	log "github.com/sirupsen/logrus"
+	"io"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -176,4 +180,57 @@ func RepeatableAttempt(client *http.Client, req *http.Request) (response *http.R
 		time.Sleep(delayTime)
 	}
 	return nil, fmt.Errorf("all connection attempts failed")
+}
+
+//UploadFile send file in form
+func UploadFile(client *http.Client, url string, filePath string) (result *http.Response, err error) {
+	body, writer := io.Pipe()
+
+	req, err := http.NewRequest(http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	mwriter := multipart.NewWriter(writer)
+	req.Header.Add("Content-Type", mwriter.FormDataContentType())
+
+	errchan := make(chan error)
+
+	go func() {
+		defer close(errchan)
+		defer writer.Close()
+		defer mwriter.Close()
+		w, err := mwriter.CreateFormFile("file", filepath.Base(filePath))
+		if err != nil {
+			errchan <- err
+			return
+		}
+		in, err := os.Open(filePath)
+		if err != nil {
+			errchan <- err
+			return
+		}
+		defer in.Close()
+
+		counter := &writeCounter{step: 10 * 1024 * 1024, message: "Uploading..."}
+		if written, err := io.Copy(w, io.TeeReader(in, counter)); err != nil {
+			errchan <- fmt.Errorf("error copying %s (%d bytes written): %v", filePath, written, err)
+			return
+		}
+		fmt.Printf("\n")
+
+		if err := mwriter.Close(); err != nil {
+			errchan <- err
+			return
+		}
+	}()
+
+	resp, err := RepeatableAttempt(client, req)
+	merr := <-errchan
+
+	if err != nil || merr != nil {
+		return resp, fmt.Errorf("http error: %v, multipart error: %v", err, merr)
+	}
+
+	return resp, nil
 }

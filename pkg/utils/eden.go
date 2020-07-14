@@ -550,3 +550,24 @@ func (server *EServer) EServerCheckStatus(name string) (fileInfo *api.FileInfo) 
 	}
 	return
 }
+
+//EServerAddFile send file with image into eserver
+func (server *EServer) EServerAddFile(filepath string) (fileInfo *api.FileInfo) {
+	u, err := ResolveURL(fmt.Sprintf("http://%s:%s", server.EServerIP, server.EserverPort), "admin/add-from-file")
+	if err != nil {
+		log.Fatalf("error constructing URL: %v", err)
+	}
+	client := server.getHTTPClient()
+	response, err := UploadFile(client, u, filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	buf, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("unable to read data from URL %s: %v", u, err)
+	}
+	if err := json.Unmarshal(buf, &fileInfo); err != nil {
+		log.Fatal(err)
+	}
+	return
+}

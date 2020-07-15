@@ -173,6 +173,14 @@ func (cloud *CloudCtx) ConfigParse(config *config.EdgeDevConfig) (device *device
 	}
 	dev.SetApplicationInstanceConfig(appInstances)
 
+	for _, el := range config.Volumes {
+		_ = cloud.AddVolume(el)
+	}
+
+	for _, el := range config.ContentInfo {
+		_ = cloud.AddContentTree(el)
+	}
+
 	if config.Reboot != nil {
 		dev.SetRebootCounter(config.Reboot.Counter, config.Reboot.DesiredState)
 	}
@@ -367,54 +375,76 @@ func (cloud *CloudCtx) checkDrive(drive *config.Drive, dataStores []*config.Data
 	return dataStores, nil
 }
 
-func imageToContentTree(image *config.Image) *config.ContentTree {
-	return &config.ContentTree{
-		Uuid:            image.Uuidandversion.Uuid,
+func (cloud *CloudCtx) imageToContentTree(image *config.Image, displayName string) *config.ContentTree {
+	for _, el := range cloud.ListContentTree() {
+		if el.DisplayName == displayName && el.URL == image.Name && el.Sha256 == image.Sha256 && el.DsId == image.DsId {
+			return el
+		}
+	}
+	id, err := uuid.NewV4()
+	if err != nil {
+		log.Fatal(err)
+	}
+	contentTree := &config.ContentTree{
+		Uuid:            id.String(),
 		DsId:            image.DsId,
 		URL:             image.Name,
 		Iformat:         image.Iformat,
 		Sha256:          image.Sha256,
 		MaxSizeBytes:    uint64(image.SizeBytes),
 		Siginfo:         image.Siginfo,
-		DisplayName:     image.Name,
+		DisplayName:     displayName,
 		GenerationCount: 0,
 	}
+	_ = cloud.AddContentTree(contentTree)
+	return contentTree
 }
 
-func checkContentTree(contentTree *config.ContentTree, contentTrees []*config.ContentTree) []*config.ContentTree {
+func checkContentTree(contentTree *config.ContentTree, contentTrees []*config.ContentTree) (*config.ContentTree, []*config.ContentTree) {
 	for _, el := range contentTrees {
 		if el.Uuid == contentTree.Uuid {
-			return contentTrees
+			return el, contentTrees
 		}
 	}
-	return append(contentTrees, contentTree)
+	return contentTree, append(contentTrees, contentTree)
 }
 
-func driveToVolume(dr *config.Drive) *config.Volume {
-	return &config.Volume{
-		Uuid: dr.Image.Uuidandversion.Uuid,
+func (cloud *CloudCtx) driveToVolume(dr *config.Drive, contentTree *config.ContentTree) *config.Volume {
+	for _, el := range cloud.ListVolume() {
+		if el.Origin.DownloadContentTreeID == contentTree.Uuid && el.DisplayName == fmt.Sprintf("%s_0_m_0", contentTree.DisplayName) {
+			return el
+		}
+	}
+	id, err := uuid.NewV4()
+	if err != nil {
+		log.Fatal(err)
+	}
+	volume := &config.Volume{
+		Uuid: id.String(),
 		Origin: &config.VolumeContentOrigin{
 			Type:                  config.VolumeContentOriginType_VCOT_DOWNLOAD,
-			DownloadContentTreeID: dr.Image.Uuidandversion.Uuid,
+			DownloadContentTreeID: contentTree.Uuid,
 		},
 		Protocols:    nil,
 		Maxsizebytes: dr.Maxsizebytes,
-		DisplayName:  dr.Image.Name,
+		DisplayName:  fmt.Sprintf("%s_0_m_0", contentTree.DisplayName),
 	}
+	_ = cloud.AddVolume(volume)
+	return volume
 }
 
-func checkVolume(vol *config.Volume, vols []*config.Volume) []*config.Volume {
+func checkVolume(vol *config.Volume, vols []*config.Volume) (*config.Volume, []*config.Volume) {
 	for _, el := range vols {
 		if el.Uuid == vol.Uuid {
-			return vols
+			return el, vols
 		}
 	}
-	return append(vols, vol)
+	return vol, append(vols, vol)
 }
 
 //GetConfigBytes generate json representation of device config
 func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx, pretty bool) ([]byte, error) {
-	var contentInfo []*config.ContentTree
+	var contentTrees []*config.ContentTree
 	var volumes []*config.Volume
 	var baseOS []*config.BaseOSConfig
 	var dataStores []*config.DatastoreConfig
@@ -429,8 +459,10 @@ func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx, pretty bool) ([]byte, err
 			if err != nil {
 				return nil, err
 			}
-			contentInfo = checkContentTree(imageToContentTree(drive.Image), contentInfo)
-			volumes = checkVolume(driveToVolume(drive), volumes)
+			contentTree := cloud.imageToContentTree(drive.Image, drive.Image.Name)
+			contentTree, contentTrees = checkContentTree(contentTree, contentTrees)
+			volume := cloud.driveToVolume(drive, contentTree)
+			volume, volumes = checkVolume(volume, volumes)
 		}
 		baseOS = append(baseOS, baseOSConfig)
 	}
@@ -442,18 +474,25 @@ func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx, pretty bool) ([]byte, err
 		}
 		//check drives from apps
 		applicationInstance.VolumeRefList = []*config.VolumeRef{}
+	drives:
 		for _, drive := range applicationInstance.Drives {
 			dataStores, err = cloud.checkDrive(drive, dataStores)
 			if err != nil {
 				return nil, err
 			}
-			contentInfo = checkContentTree(imageToContentTree(drive.Image), contentInfo)
-			volume := driveToVolume(drive)
+			contentTree := cloud.imageToContentTree(drive.Image, applicationInstance.Displayname)
+			contentTree, contentTrees = checkContentTree(contentTree, contentTrees)
+			volume := cloud.driveToVolume(drive, contentTree)
+			volume, volumes = checkVolume(volume, volumes)
+			for _, volRef := range applicationInstance.VolumeRefList {
+				if volRef.Uuid == volume.Uuid {
+					continue drives
+				}
+			}
 			applicationInstance.VolumeRefList = append(applicationInstance.VolumeRefList, &config.VolumeRef{
 				Uuid:            volume.Uuid,
 				GenerationCount: 0,
 			})
-			volumes = checkVolume(volume, volumes)
 		}
 		networkInstanceConfigArray := dev.GetNetworkInstances()
 		//check network instances from apps
@@ -515,7 +554,7 @@ func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx, pretty bool) ([]byte, err
 			Version: strconv.Itoa(dev.GetConfigVersion()),
 		},
 		Volumes:           volumes,
-		ContentInfo:       contentInfo,
+		ContentInfo:       contentTrees,
 		Apps:              applicationInstances,
 		Networks:          networkConfigs,
 		Datastores:        dataStores,
@@ -527,7 +566,7 @@ func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx, pretty bool) ([]byte, err
 		SystemAdapterList: systemAdapterConfigs,
 		DeviceIoList:      physicalIOs,
 		Manufacturer:      "",
-		ProductName:       "",
+		ProductName:       dev.GetDevModel(),
 		NetworkInstances:  networkInstanceConfigs,
 		Enterprise:        "",
 		Name:              dev.GetName(),

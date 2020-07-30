@@ -202,6 +202,23 @@ func (ctx *TestContext) ConfigSync(edgeNode *device.Ctx) {
 	}
 }
 
+//AppDelete delete app from controller
+func (ctx *TestContext) AppDelete(edgeNode *device.Ctx, appName string) {
+	for id, appUUID := range edgeNode.GetApplicationInstances() {
+		appConfig, _ := ctx.GetController().GetApplicationInstanceConfig(appUUID)
+		if appConfig.Displayname == appName {
+			configs := edgeNode.GetApplicationInstances()
+			utils.DelEleInSlice(&configs, id)
+			edgeNode.SetApplicationInstanceConfig(configs)
+			if err := ctx.GetController().RemoveApplicationInstanceConfig(appUUID); err != nil {
+				log.Fatal(err)
+			}
+			ctx.ConfigSync(edgeNode)
+			break
+		}
+	}
+}
+
 //WaitForProc blocking execution until the time elapses or all Procs gone
 //returns error on timeout
 func (tc *TestContext) WaitForProc(secs int) {

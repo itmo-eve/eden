@@ -1,0 +1,2 @@
+env EDEN_ENV='Hello world!'
+test eden.escript.test -test.v -test.run TestEdenScripts/^env$ -testdata {{EdenConfig "eden.root"}}/../tests/escript/testdata/

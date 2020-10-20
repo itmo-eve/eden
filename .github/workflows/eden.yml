@@ -8,6 +8,13 @@ jobs:
   integration:
     runs-on: ubuntu-20.04
     steps:
+      - name: Public IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+      - name: Print Public IP
+        run: |
+          echo ${{ steps.ip.outputs.ipv4 }}
+          echo ${{ steps.ip.outputs.ipv6 }}
       - name: setup
         run: |
           sudo apt update
@@ -35,3 +42,4 @@ jobs:
         with:
           name: 'eden-report'
           path: ${{ github.workspace }}/trace.log
+

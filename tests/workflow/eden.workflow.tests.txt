@@ -12,14 +12,14 @@ eden.escript.test -test.run TestEdenScripts/eden_onboard
 {{end}}
 /bin/echo Eden Log test (4/{{$tests}})
 eden.escript.test -test.run TestEdenScripts/log_test -testdata ../lim/testdata/
-#/bin/echo Eden SSH test (5/{{$tests}})
-#eden.escript.test -test.run TestEdenScripts/ssh
+/bin/echo Eden SSH test (5/{{$tests}})
+eden.escript.test -test.run TestEdenScripts/ssh
 {{ if eq $workflow "large" }}
 /bin/echo Eden Info test (6/{{$tests}})
 eden.escript.test -test.run TestEdenScripts/info_test -testdata ../lim/testdata/
 {{end}}
-/bin/echo Eden Metric test (7/{{$tests}})
-eden.escript.test -test.run TestEdenScripts/metric_test -testdata ../lim/testdata/
+#/bin/echo Eden Metric test (7/{{$tests}})
+#eden.escript.test -test.run TestEdenScripts/metric_test -testdata ../lim/testdata/
 /bin/echo Eden Network test (8/{{$tests}})
 eden.escript.test -test.run TestEdenScripts/test_networking -testdata ../network/testdata/
 {{ if eq $workflow "large" }}

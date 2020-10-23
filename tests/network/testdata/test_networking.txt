@@ -79,12 +79,6 @@ eden pod delete app1
 eden pod delete app2
 eden pod delete app3
 
-message 'waiting for apps removed state'
-test eden.app.test -test.v -timewait 20m - app1 app2 app3
-stdout 'no app with app1 found'
-stdout 'no app with app2 found'
-stdout 'no app with app3 found'
-
 
 -- networks_process.sh --
 #!/bin/sh

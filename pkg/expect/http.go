@@ -2,12 +2,14 @@ package expect
 
 import (
 	"fmt"
-	"github.com/lf-edge/eden/pkg/eden"
+	"net/url"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/lf-edge/eden/pkg/defaults"
+	"github.com/lf-edge/eden/pkg/eden"
 	"github.com/lf-edge/eve/api/go/config"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
@@ -44,6 +46,13 @@ func (exp *AppExpectation) createImageHTTP(id uuid.UUID, dsID string) *config.Im
 	if filePath == "" {
 		log.Fatal("Not downloaded")
 	}
+	if exp.httpDirectLoad {
+		u, err := url.Parse(exp.appLink)
+		if err != nil {
+			log.Fatal(err)
+		}
+		filePath = strings.TrimLeft(u.RequestURI(), "/")
+	}
 	return &config.Image{
 		Uuidandversion: &config.UUIDandVersion{
 			Uuid:    id.String(),
@@ -67,22 +76,43 @@ func (exp *AppExpectation) checkImageHTTP(img *config.Image, dsID string) bool {
 
 //checkDataStoreHTTP checks if provided ds match expectation
 func (exp *AppExpectation) checkDataStoreHTTP(ds *config.DatastoreConfig) bool {
-	if ds.DType == config.DsType_DsHttp && ds.Fqdn == fmt.Sprintf("http://%s:%s", exp.ctrl.GetVars().AdamDomain, exp.ctrl.GetVars().EServerPort) {
-		return true
+	if ds.DType == config.DsType_DsHttp || ds.DType == config.DsType_DsHttps {
+		if exp.httpDirectLoad && ds.Fqdn == fmt.Sprintf("http://%s:%s", exp.ctrl.GetVars().AdamDomain, exp.ctrl.GetVars().EServerPort) {
+			return true
+		}
+		u, err := url.Parse(exp.appLink)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !exp.httpDirectLoad && ds.Fqdn == fmt.Sprintf("%s://%s", u.Scheme, u.Hostname()) {
+			return true
+		}
 	}
 	return false
 }
 
 //createDataStoreHTTP creates datastore, pointed onto EServer http endpoint
 func (exp *AppExpectation) createDataStoreHTTP(id uuid.UUID) *config.DatastoreConfig {
-	return &config.DatastoreConfig{
+	ds := &config.DatastoreConfig{
 		Id:         id.String(),
 		DType:      config.DsType_DsHttp,
-		Fqdn:       fmt.Sprintf("http://%s:%s", exp.ctrl.GetVars().AdamDomain, exp.ctrl.GetVars().EServerPort),
 		ApiKey:     "",
 		Password:   "",
 		Dpath:      "",
 		Region:     "",
 		CipherData: nil,
 	}
+	if exp.httpDirectLoad {
+		u, err := url.Parse(exp.appLink)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if u.Scheme == "https" {
+			ds.DType = config.DsType_DsHttps
+		}
+		ds.Fqdn = fmt.Sprintf("%s://%s", u.Scheme, u.Hostname())
+	} else {
+		ds.Fqdn = fmt.Sprintf("http://%s:%s", exp.ctrl.GetVars().AdamDomain, exp.ctrl.GetVars().EServerPort)
+	}
+	return ds
 }

@@ -12,33 +12,36 @@ import (
 
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/dustin/go-humanize"
+	"github.com/lf-edge/eden/pkg/controller/eapps"
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/device"
 	"github.com/lf-edge/eden/pkg/expect"
 	"github.com/lf-edge/eden/pkg/projects"
 	"github.com/lf-edge/eden/pkg/utils"
 	"github.com/lf-edge/eve/api/go/info"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
 
-// This test deploys the VM with image https://cloud-images.ubuntu.com/releases/groovy/release-20201022.1/ubuntu-20.10-server-cloudimg-ARCH.img
+// This test deploys the VM with image https://cloud-images.ubuntu.com/releases/groovy/release-20210108/ubuntu-20.10-server-cloudimg-ARCH.img
 // with ARCH from config and vncDisplay into EVE
 // waits for the RUNNING state and checks access to VNC and SSH console
 // and removes app from EVE
 
 var (
-	timewait = flag.Duration("timewait", 15*time.Minute, "Timewait for items waiting")
+	timewait = flag.Duration("timewait", 20*time.Minute, "Timewait for items waiting")
 
-	expand       = flag.Duration("expand", 7*time.Minute, "Expand timewait on success of step")
+	expand       = flag.Duration("expand", 10*time.Minute, "Expand timewait on success of step")
 	name         = flag.String("name", "", "Name of app, random if empty")
 	vncDisplay   = flag.Int("vncDisplay", 1, "VNC display number")
 	vncPassword  = flag.String("vncPassword", "12345678", "Password for VNC")
 	sshPort      = flag.Int("sshPort", 8027, "Port to publish ssh")
-	cpus         = flag.Uint("cpus", 1, "Cpu number for app")
+	cpus         = flag.Uint("cpus", 2, "Cpu number for app")
 	memory       = flag.String("memory", "1G", "Memory for app")
+	direct       = flag.Bool("direct", true, "Load image from url, not from eserver")
 	metadata     = flag.String("metadata", "#cloud-config\npassword: passw0rd\nchpasswd: { expire: False }\nssh_pwauth: True\n", "Metadata to pass into VM")
-	appLink      = flag.String("applink", "https://cloud-images.ubuntu.com/releases/groovy/release-20201022.1/ubuntu-20.10-server-cloudimg-%s.img", "Link to qcow2 image. You can pass %s for automatically set of arch (amd64/arm64)")
+	appLink      = flag.String("applink", "https://cloud-images.ubuntu.com/releases/groovy/release-20210108/ubuntu-20.10-server-cloudimg-%s.img", "Link to qcow2 image. You can pass %s for automatically set of arch (amd64/arm64)")
 	tc           *projects.TestContext
 	externalIP   string
 	externalPort int
@@ -199,6 +202,8 @@ func TestVNCVMStart(t *testing.T) {
 
 	opts = append(opts, expect.WithVncPassword(*vncPassword))
 
+	opts = append(opts, expect.WithHTTPDirectLoad(*direct))
+
 	if *sshPort != 0 {
 
 		portPublish := []string{fmt.Sprintf("%d:%d", *sshPort, 22)}
@@ -241,7 +246,19 @@ func TestVNCVMStart(t *testing.T) {
 
 	tc.ExpandOnSuccess(int(expand.Seconds()))
 
-	tc.WaitForProc(int(timewait.Seconds()))
+	callback := func() {
+		appID, err := uuid.FromString(appInstanceConfig.Uuidandversion.Uuid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("--- app %s logs ---\n", appInstanceConfig.Displayname)
+		if err = tc.GetController().LogAppsChecker(edgeNode.GetID(), appID, nil, eapps.HandleFactory(eapps.LogJSON, false), eapps.LogExist, 0); err != nil {
+			t.Fatalf("LogAppsChecker: %s", err)
+		}
+		fmt.Println("------")
+	}
+
+	tc.WaitForProcWithErrorCallback(int(timewait.Seconds()), callback)
 }
 
 //TestVNCVMDelete gets EdgeNode and deletes previously deployed app, defined in appName or in name flag

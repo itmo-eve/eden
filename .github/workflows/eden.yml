@@ -6,15 +6,19 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   integration:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ARM64, ubuntu-20.04 ]
     steps:
       - name: setup
         run: |
           sudo apt update
-          sudo apt install -y qemu-utils qemu-system-x86
-      - name: host info
+          sudo apt install -y qemu-utils qemu-system-x86 qemu-system-aarch64
+      - name: Determine architecture prefix
         run: |
-          ip a
+          echo "ARCH=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')" >> "$GITHUB_ENV"
       - name: get eden
         uses: actions/checkout@v2
       - name: build eden
@@ -30,11 +34,11 @@ jobs:
       - name: Collect logs
         if: ${{ always() }}
         run: |
-          ./eden log --format json > trace.log
+          ./eden log --format json > trace-${{ env.ARCH }}.log
           ./eden stop
       - name: Store raw test results
         if: ${{ always() }}
         uses: actions/upload-artifact@v2
         with:
           name: 'eden-report'
-          path: ${{ github.workspace }}/trace.log
+          path: ${{ github.workspace }}/trace-${{ env.ARCH }}.log

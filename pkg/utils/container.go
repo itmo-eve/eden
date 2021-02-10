@@ -128,7 +128,7 @@ func CreateAndRunContainer(containerName string, imageName string, portMap map[s
 		ExposedPorts: portExposed,
 		User:         user,
 		Env:          envs,
-	}, hostConfig, nil, nil, containerName)
+	}, hostConfig, nil, containerName)
 	if err != nil {
 		return fmt.Errorf("ContainerCreate: %s", err)
 	}
@@ -502,7 +502,6 @@ func RunDockerCommand(image string, command string, volumeMap map[string]string)
 	}, &container.HostConfig{
 		Mounts: mounts,
 	},
-		nil,
 		nil,
 		"")
 	if err != nil {

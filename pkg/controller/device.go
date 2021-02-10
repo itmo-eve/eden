@@ -86,7 +86,6 @@ func (cloud *CloudCtx) ConfigParse(config *config.EdgeDevConfig) (device *device
 		}
 	}
 	version, _ := strconv.Atoi(config.Id.Version)
-	dev.SetName(config.Name)
 	dev.SetConfigVersion(version)
 	dev.SetDevModel(config.ProductName)
 	for _, el := range config.ConfigItems {
@@ -278,26 +277,6 @@ func (cloud *CloudCtx) GetAllNodes() {
 		}
 		cloud.processDev(id, device.NotOnboarded)
 	}
-}
-
-//GetEdgeNode by name
-func (cloud *CloudCtx) GetEdgeNode(name string) *device.Ctx {
-	if name == "" {
-		node, _ := cloud.GetDeviceCurrent()
-		if node != nil {
-			return node
-		}
-		return nil
-	}
-	if len(cloud.devices) == 0 {
-		return nil
-	}
-	for _, el := range cloud.devices {
-		if el.GetName() == name {
-			return el
-		}
-	}
-	return nil
 }
 
 //AddDevice add device with specified devUUID
@@ -556,8 +535,6 @@ volumeLoop:
 		Manufacturer:      "",
 		ProductName:       dev.GetDevModel(),
 		NetworkInstances:  networkInstanceConfigs,
-		Enterprise:        "",
-		Name:              dev.GetName(),
 		ControllerEpoch:   dev.GetEpoch(),
 	}
 	if pretty {

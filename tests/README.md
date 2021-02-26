@@ -159,7 +159,7 @@ of templates you can see at [Unit Tests](units).
 Specific arguments for testing binary files may be passed by two ways:
 
 * placing them in the local eden-config.tmpl for this test, for ex.:
-[tests/reboot/eden-config.tmpl](../tests/reboot/eden-config.tmpl)
+[tests/reboot/eden-config.tmpl](/reboot/eden-config.tmpl)
 then you must generate eden-config.yaml for this test (it is included into
 `build` target of Makefiles of tests for simplicity):
 `utils template eden-config.tmpl>eden-config.yml`. You must regenerate config
@@ -168,7 +168,7 @@ to properly rendering of templates with data from new context if you choose
 first variant (with eden-config.tmpl).
 * use of test arguments in test scripts or a selected test from an executable
 binary test for ex.:
-[tests/vnc/eden.vnc.tests.txt](../tests/vnc/eden.vnc.tests.txt)
+[tests/vnc/eden.vnc.tests.txt](/vnc/eden.vnc.tests.txt)
 
 The second option is more flexible, because we can run the same test several
 times with different parameters in the same scenario.

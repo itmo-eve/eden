@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -109,9 +111,9 @@ func (tc *TestContext) GetNodeDescriptions() (nodes []*EdgeNodeDescription) {
 	} else {
 		log.Debug("NodeDescriptions not found. Will use default one.")
 		nodes = append(nodes, &EdgeNodeDescription{
-			Key: utils.ResolveAbsPath(viper.GetString("eve.cert")),
+			Key:    utils.ResolveAbsPath(viper.GetString("eve.cert")),
 			Serial: viper.GetString("eve.serial"),
-			Model: viper.GetString("eve.devModel"),
+			Model:  viper.GetString("eve.devModel"),
 		})
 	}
 	return
@@ -249,18 +251,46 @@ func (tc *TestContext) WaitForProcWithErrorCallback(secs int, callback Callback)
 	}
 }
 
+// AnnotateGH returns function that will prints annotation with provided message
+// skip is deep of caller on runtime stack: 0 - print current line, 1 - line of caller
+func (tc *TestContext) AnnotateGH(skip int) func(message string) {
+	_, fn, line, ok := runtime.Caller(skip + 1)
+	if ok {
+		pathToPrint := fn
+		abs, err := filepath.Abs(pathToPrint)
+		// we need to find the relative path from the repo`s root
+		testDirectory := "tests"
+		if err == nil {
+			split := strings.SplitN(abs, fmt.Sprintf("/%s/", testDirectory), 2)
+			if len(split) == 2 {
+				pathToPrint = filepath.Join(testDirectory, split[1])
+			}
+		}
+		return func(message string) {
+			// replace symbols to be compatible with GH Actions
+			ghAnnotation := strings.ReplaceAll(message, "\n", "%0A")
+			ghAnnotation = strings.ReplaceAll(ghAnnotation, "\r", "%0D")
+			fmt.Printf("::error file=%s,line=%d::%s\n", pathToPrint, line, ghAnnotation)
+		}
+	}
+	return func(string) {}
+}
+
 //WaitForProc blocking execution until the time elapses or all Procs gone
 //returns error on timeout
 func (tc *TestContext) WaitForProc(secs int) {
 	timeout := time.Duration(secs) * time.Second
+	annotation := tc.AnnotateGH(1)
 	callback := func() {
 		tc.procBus.clean()
+		text := fmt.Sprintf("WaitForProc terminated by timeout %s", timeout)
 		if len(tc.tests) == 0 {
-			log.Fatalf("WaitForProc terminated by timeout %s", timeout)
+			log.Fatal(text)
 		}
 		for _, el := range tc.tests {
-			el.Errorf("WaitForProc terminated by timeout %s", timeout)
+			el.Error(text)
 		}
+		annotation(text)
 	}
 	tc.WaitForProcWithErrorCallback(secs, callback)
 }

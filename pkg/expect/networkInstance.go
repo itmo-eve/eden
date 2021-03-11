@@ -1,14 +1,16 @@
 package expect
 
 import (
+	"math/rand"
+	"strconv"
+	"time"
+
 	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/lf-edge/eden/pkg/models"
 	"github.com/lf-edge/eden/pkg/utils"
 	"github.com/lf-edge/eve/api/go/config"
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
-	"math/rand"
-	"time"
 )
 
 //NetInstanceExpectation stores options for create NetworkInstanceConfigs for apps
@@ -110,4 +112,56 @@ func (exp *AppExpectation) NetworkInstances() (networkInstances map[*NetInstance
 		networkInstances[ni] = networkInstance
 	}
 	return
+}
+
+// getAcls returns rules for access/deny/forwarding traffic
+func (exp *AppExpectation) getAcls(ni *NetInstanceExpectation) []*config.ACE {
+	var acls []*config.ACE
+	var aclID int32 = 1
+	if exp.acl != nil {
+		// in case of defined acl allow access only to them
+		for _, el := range exp.acl {
+			host := el
+			acls = append(acls, &config.ACE{
+				Id: aclID,
+				Matches: []*config.ACEMatch{{
+					Type:  "host",
+					Value: host,
+				}},
+				Dir: config.ACEDirection_BOTH,
+			})
+			aclID++
+		}
+	} else {
+		// allow access to all addresses
+		acls = append(acls, &config.ACE{
+			Matches: []*config.ACEMatch{{
+				Type:  "ip",
+				Value: "0.0.0.0/0",
+			}},
+			Id: aclID,
+		})
+		aclID++
+	}
+	if ni.ports != nil {
+		// forward defined ports
+		for po, pi := range ni.ports {
+			acls = append(acls, &config.ACE{
+				Id: aclID,
+				Matches: []*config.ACEMatch{{
+					Type:  "protocol",
+					Value: "tcp",
+				}, {
+					Type:  "lport",
+					Value: strconv.Itoa(po),
+				}},
+				Actions: []*config.ACEAction{{
+					Portmap: true,
+					AppPort: uint32(pi),
+				}},
+				Dir: config.ACEDirection_BOTH})
+			aclID++
+		}
+	}
+	return acls
 }

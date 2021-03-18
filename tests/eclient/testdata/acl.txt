@@ -12,36 +12,26 @@ exec chmod 600 {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa
 # Starting of reboot detector with a 1 reboot limit
 ! test eden.reboot.test -test.v -timewait 40m -reboot=0 -count=1 &
 
-# reset eve to initial state
-eden eve reset
-exec sleep 10
+# Define access only to github.com
+eden pod deploy -n curl-acl --memory=512MB docker://itmoeve/eclient:0.4 -p 2223:22 --acl=github.com
 
-# Define access only to github.com and 4.2.2.2
-eden pod deploy -n ping-acl --memory=512MB docker://itmoeve/eclient:0.4 -p 2223:22
-
-test eden.app.test -test.v -timewait 10m RUNNING ping-acl
+test eden.app.test -test.v -timewait 10m RUNNING curl-acl
 
 exec -t 10m bash wait_ssh.sh 2223
 
-eden pod ps
-cp stdout pod_ps
-
 exec sleep 10
 
-# Try to ping host we defined
-exec -t 1m bash ping.sh 2223 github.com
+# Try to curl host we defined
+exec -t 1m bash curl.sh 2223 github.com
+stderr 'Connected to github.com'
 
-# Try to ping host we defined
-exec -t 1m bash ping.sh 2223 4.2.2.2
-stdout '0% packet loss'
+# Try to curl another host
+! exec -t 1m bash curl.sh 2223 google.com
+! stderr 'Connected'
 
-# Try to ping another host
-! exec -t 1m bash ping.sh 2223 google.com
-stdout '100% packet loss'
+eden pod delete curl-acl
 
-eden pod delete ping-acl
-
-test eden.app.test -test.v -timewait 10m - ping-acl
+test eden.app.test -test.v -timewait 10m - curl-acl
 
 -- wait_ssh.sh --
 
@@ -58,13 +48,13 @@ do
   done
 done
 
--- ping.sh --
+-- curl.sh --
 
 EDEN={{EdenConfig "eden.root"}}/{{EdenConfig "eden.bin-dist"}}/{{EdenConfig "eden.eden-bin"}}
 HOST=$($EDEN eve ip)
 
-echo {{template "ssh"}}$HOST -p $1 curl "$2"
-{{template "ssh"}}$HOST -p $1 curl "$2"
+echo {{template "ssh"}}$HOST -p $1 curl -v --max-time 30 "$2"
+{{template "ssh"}}$HOST -p $1 curl -v --max-time 30 "$2"
 
 -- eden-config.yml --
 {{/* Test's config file */}}

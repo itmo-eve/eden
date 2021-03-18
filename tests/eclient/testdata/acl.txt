@@ -17,7 +17,7 @@ eden eve reset
 exec sleep 10
 
 # Define access only to github.com and 4.2.2.2
-eden pod deploy -n ping-acl --memory=512MB docker://itmoeve/eclient:0.4 -p 2223:22 --acl=github.com --acl=4.2.2.2
+eden pod deploy -n ping-acl --memory=512MB docker://itmoeve/eclient:0.4 -p 2223:22
 
 test eden.app.test -test.v -timewait 10m RUNNING ping-acl
 

@@ -16,6 +16,8 @@ jobs:
           go-version: '1.15'
       - name: Check
         run: |
+          ip addr list
+          ip route
           for addr in $(ip addr list|sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
           do
               if echo "$addr" | grep -q -E "10.11.(12|13).[0-9]+"; then
@@ -33,11 +35,13 @@ jobs:
         run: |
           ./eden config add default
           ./eden config set default --key=eve.accel --value=false
+          EDITOR=cat ./eden config edit default
           echo > tests/workflow/testdata/eden_stop.txt
           ./eden test ./tests/workflow -v debug
       - name: Collect logs
         if: ${{ always() }}
         run: |
+          sleep 20
           ./eden log --format json > trace.log
           ./eden info > info.log
       - name: Store raw test results

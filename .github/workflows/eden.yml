@@ -28,11 +28,13 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y qemu-utils qemu-system-x86
+          sudo sysctl -w net.ipv4.ping_group_range='0 65535'
       - name: build eden
         run: |
           make build-tests
       - name: run
         run: |
+          sudo sysctl net.ipv4.ping_group_range
           ./eden config add default
           ./eden config set default --key=eve.accel --value=false
           EDITOR=cat ./eden config edit default

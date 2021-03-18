@@ -46,75 +46,10 @@ eden.escript.test -test.run TestEdenScripts/eve_restart
 eden.escript.test -testdata ../lim/testdata/ -test.run TestEdenScripts/log_test
 /bin/echo Eden SSH test (06/{{$tests}})
 eden.escript.test -test.run TestEdenScripts/ssh
-{{ if or (eq $workflow "large") (eq $workflow "gcp") }}
-/bin/echo Eden Info test (07/{{$tests}})
-eden.escript.test -testdata ../lim/testdata/ -test.run TestEdenScripts/info_test
-{{end}}
-/bin/echo Eden Metric test (08/{{$tests}})
-eden.escript.test -testdata ../lim/testdata/ -test.run TestEdenScripts/metric_test
 
-/bin/echo Escript args test (09/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/arg -args=test1=123,test2=456
-/bin/echo Escript template test (10/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/template
-/bin/echo Escript message test (11/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/message
-/bin/echo Escript nested scripts test (12/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/nested_scripts
-/bin/echo Escript time test (13/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/time
-/bin/echo Escript source test (14/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/source
-/bin/echo Escript fail scenario test (15/{{$tests}})
-eden.escript.test -testdata ../escript/testdata/ -test.run TestEdenScripts/fail_scenario
-
-/bin/echo Eden basic network test (16/{{$tests}})
-eden.escript.test -testdata ../network/testdata/ -test.run TestEdenScripts/network_test
-/bin/echo Eden basic volumes test (17.1/{{$tests}})
-eden.escript.test -testdata ../volume/testdata/ -test.run TestEdenScripts/volumes_test
-/bin/echo Eden sftp volumes test (17.2/{{$tests}})
-eden.escript.test -testdata ../volume/testdata/ -test.run TestEdenScripts/volume_sftp
-
-/bin/echo Eden Host only ACL (18.1/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/host-only
 /bin/echo Eden ACL to particular host (18.2/{{$tests}})
 eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/acl
 /bin/echo Eden Network light (19/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/networking_light
-/bin/echo Eden Networks switch (20/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/nw_switch
-/bin/echo Eden Network Ports switch (21/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/port_switch
-
-{{if (eq $usb_pt "y")}}
-/bin/echo Hardware reboot - USB (22/{{$tests}})
-eden.escript.test -testdata ../hardware_reboot/testdata/ -test.run TestEdenScripts/hardware_usb_reboot
-{{end}}
-
-{{ if or (eq $workflow "large") (eq $workflow "gcp") }}
-/bin/echo Eden VNC (23/{{$tests}})
-eden.escript.test -testdata ../vnc/testdata/ -test.run TestEdenScripts/vnc_test
-/bin/echo Eden registry (24/{{$tests}})
-eden.escript.test -testdata ../registry/testdata/ -test.run TestEdenScripts/registry_test
-/bin/echo Eden Network test (25/{{$tests}})
-eden.escript.test -testdata ../network/testdata/ -test.run TestEdenScripts/test_networking
-/bin/echo Eden 2 dockers test (26/{{$tests}})
-eden.escript.test -testdata ../docker/testdata/ -test.run TestEdenScripts/2dockers_test
-/bin/echo Eden 2 dockers test with app state detector (27/{{$tests}})
-eden.escript.test -testdata ../app/testdata/ -test.run TestEdenScripts/2dockers_test
-/bin/echo Eden Nginx (28/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/ngnix
-/bin/echo Eden Mariadb (29/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/maridb
-/bin/echo Eden eclient with disk (30/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/disk
-/bin/echo EVE reset (31/{{$tests}})
-eden.escript.test -test.run TestEdenScripts/eden_reset
-{{end}}
-{{ if  (eq $workflow "large")  }}
-/bin/echo Eden's testing the maximum application limit (32/{{$tests}})
-eden.escript.test -testdata ../eclient/testdata/ -test.run TestEdenScripts/eclients
-{{end}}
 
 /bin/echo Eden Reboot test (33/{{$tests}})
 eden.escript.test -test.run TestEdenScripts/reboot_test

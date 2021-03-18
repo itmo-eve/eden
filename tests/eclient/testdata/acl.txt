@@ -64,7 +64,8 @@ done
 EDEN={{EdenConfig "eden.root"}}/{{EdenConfig "eden.bin-dist"}}/{{EdenConfig "eden.eden-bin"}}
 HOST=$($EDEN eve ip)
 
-echo {{template "ssh"}}$HOST -p $1 ping -c 5 "$2"
+echo {{template "ssh"}}$HOST -p $1 curl "$2"
+{{template "ssh"}}$HOST -p $1 curl "$2"
 {{template "ssh"}}$HOST -p $1 ping -c 5 "$2"
 
 -- eden-config.yml --

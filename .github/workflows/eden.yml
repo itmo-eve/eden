@@ -18,6 +18,8 @@ jobs:
         run: |
           ip addr list
           ip route
+          sudo iptables -S
+          sudo iptables -t nat -S
           for addr in $(ip addr list|sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
           do
               if echo "$addr" | grep -q -E "10.11.(12|13).[0-9]+"; then

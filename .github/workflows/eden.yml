@@ -16,6 +16,7 @@ jobs:
           go-version: '1.15'
       - name: Check
         run: |
+          ping -c 5 ya.ru || echo "no ping"
           ip addr list
           ip route
           sudo iptables -S

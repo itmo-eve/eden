@@ -48,7 +48,7 @@ const (
 	DefaultRegistryPort = 5000
 
 	//tags, versions, repos
-	DefaultEVETag               = "0.0.0-master-efa32c66" //DefaultEVETag tag for EVE image
+	DefaultEVETag               = "0.0.0-master-5176dda2" //DefaultEVETag tag for EVE image
 	DefaultAdamTag              = "0.0.12"
 	DefaultRedisTag             = "6"
 	DefaultRegistryTag          = "2.7"
@@ -62,8 +62,8 @@ const (
 	DefaultEveRegistry          = "lfedge"
 	DefaultRegistry             = "docker.io"
 
-	DefaultSFTPUser     = "user"
-	DefaultSFTPPassword = "password"
+	DefaultSFTPUser      = "user"
+	DefaultSFTPPassword  = "password"
 	DefaultSFTPDirPrefix = "/eserver/run"
 
 	DefaultEServerTag          = "1.4"

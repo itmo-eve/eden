@@ -103,7 +103,7 @@ var loadRegistryCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ref := args[0]
-		registry := fmt.Sprintf("%s:%d", viper.GetString("registry.ip"), viper.GetInt("registry.port"))
+		registry := fmt.Sprintf("%s:%d", viper.GetString("registry.eden-ip"), viper.GetInt("registry.port"))
 		hash, err := utils.LoadRegistry(ref, registry)
 		if err != nil {
 			log.Errorf("failed to load image %s: %v", ref, err)

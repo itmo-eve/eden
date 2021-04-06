@@ -408,6 +408,8 @@ func generateConfigFileFromTemplate(filePath string, templateString string, cont
 			return defaults.DefaultRegistryTag
 		case "registry.ip":
 			return ip
+		case "registry.eden-ip":
+			return "127.0.0.1"
 		case "registry.dist":
 			return defaults.DefaultRegistryDist
 		default:

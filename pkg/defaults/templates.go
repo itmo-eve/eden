@@ -205,8 +205,11 @@ registry:
     #tag for registry image
     tag: '{{parse "registry.tag"}}'
 
-    #ip of registry for EDEN access
+    #ip of registry for EVE access
     ip: '{{parse "registry.ip"}}'
+
+    #ip of registry for EDEN access
+    eden-ip: '{{parse "registry.eden-ip"}}'
 
     # dist path to store registry data
     dist: '{{parse "registry.dist"}}'

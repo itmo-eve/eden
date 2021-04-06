@@ -47,6 +47,8 @@ const (
 	DefaultAdamPort     = 3333
 	DefaultRegistryPort = 5000
 
+	DefaultRedisPassword = "redis-eden-password"
+
 	//tags, versions, repos
 	DefaultEVETag               = "6.3.0" //DefaultEVETag tag for EVE image
 	DefaultAdamTag              = "0.0.12"

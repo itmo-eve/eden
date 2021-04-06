@@ -33,7 +33,8 @@ import (
 func StartRedis(redisPort int, redisPath string, redisForce bool, redisTag string) (err error) {
 	portMap := map[string]string{"6379": strconv.Itoa(redisPort)}
 	volumeMap := map[string]string{"/data": redisPath}
-	redisServerCommand := strings.Fields("redis-server --appendonly yes")
+	redisServerCommand := strings.Fields(
+		fmt.Sprintf("redis-server --appendonly yes --requirepass %s", defaults.DefaultRedisPassword))
 	if redisPath != "" {
 		if err = os.MkdirAll(redisPath, 0755); err != nil {
 			return fmt.Errorf("StartRedis: Cannot create directory for redis (%s): %s", redisPath, err)

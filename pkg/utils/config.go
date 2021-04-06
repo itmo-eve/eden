@@ -282,9 +282,13 @@ func generateConfigFileFromTemplate(filePath string, templateString string, cont
 		case "adam.ip":
 			return ip
 		case "adam.redis.eden":
-			return fmt.Sprintf("redis://%s:%d", ip, defaults.DefaultRedisPort)
+			return fmt.Sprintf("redis://%s:%s@%s:%d",
+				defaults.DefaultRedisPassword, defaults.DefaultRedisPassword,
+				ip, defaults.DefaultRedisPort)
 		case "adam.redis.adam":
-			return fmt.Sprintf("redis://%s:%d", defaults.DefaultRedisContainerName, defaults.DefaultRedisPort)
+			return fmt.Sprintf("redis://%s:%s@%s:%d",
+				defaults.DefaultRedisPassword, defaults.DefaultRedisPassword,
+				defaults.DefaultRedisContainerName, defaults.DefaultRedisPort)
 		case "adam.force":
 			return true
 		case "adam.ca":

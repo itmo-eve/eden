@@ -1,18 +1,16 @@
 package cmd
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
-	"text/template"
 
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/eden"
@@ -298,30 +296,24 @@ var setupCmd = &cobra.Command{
 						EServerPort: eServerPort,
 					}
 					files := []string{
-						"kernel", "initrd.img", "initrd.bits",
+						"kernel", "initrd.img", "initrd.bits", "installer.img", "rootfs.img",
 					}
 					for _, file := range files {
 						if _, err := eden.AddFileIntoEServer(server, filepath.Join(filepath.Dir(eveImageFile), file)); err != nil {
 							log.Fatalf("AddFileIntoEServer: %s", err)
 						}
 					}
-					t := template.New("t")
-					t, err := t.Parse(defaults.DefaultIPXEConfig)
+					ipxeFile := filepath.Join(filepath.Dir(eveImageFile), "ipxe.efi.cfg")
+					ipxeFileBytes, err := ioutil.ReadFile(ipxeFile)
 					if err != nil {
-						log.Fatal(err)
+						log.Fatalf("Cannot read ipxe file: %v", err)
 					}
-					buf := new(bytes.Buffer)
-					err = t.Execute(buf, struct {
-						ADDRESS string
-					}{
-						path.Join(fmt.Sprintf("%s:%d", eServerIP, eserverPort), "eserver"),
-					})
-					if err != nil {
-						log.Fatal(err)
-					}
+					re := regexp.MustCompile("# set url .*")
+					ipxeFileReplaced := re.ReplaceAll(ipxeFileBytes,
+						[]byte(fmt.Sprintf("set url http://%s:%d/%s/", eServerIP, eserverPort, "eserver")))
 					_ = os.MkdirAll(filepath.Join(filepath.Dir(eveImageFile), "tftp"), 0777)
 					ipxeConfigFile := filepath.Join(filepath.Dir(eveImageFile), "tftp", "ipxe.efi.cfg")
-					_ = ioutil.WriteFile(ipxeConfigFile, buf.Bytes(), 0777)
+					_ = ioutil.WriteFile(ipxeConfigFile, ipxeFileReplaced, 0777)
 					if _, err := eden.AddFileIntoEServer(server, ipxeConfigFile); err != nil {
 						log.Fatalf("AddFileIntoEServer: %s", err)
 					}

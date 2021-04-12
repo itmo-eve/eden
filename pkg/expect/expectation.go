@@ -98,7 +98,7 @@ func AppExpectationFromURL(ctrl controller.Cloud, device *device.Ctx, appLink st
 	}
 	switch expectation.ctrl.GetVars().ZArch {
 	case "amd64":
-		expectation.virtualizationMode = config.VmMode_HVM
+		expectation.virtualizationMode = config.VmMode_FML
 	case "arm64":
 		expectation.virtualizationMode = config.VmMode_PV
 	default:

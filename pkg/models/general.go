@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eve/api/go/config"
+	"github.com/lf-edge/eve/api/go/evecommon"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -68,7 +69,7 @@ func (ctx *DevModelGeneral) PhysicalIOs() []*config.PhysicalIO {
 }
 
 //SetPhysicalIOs sets physicalIOs of devModel
-func (ctx *DevModelGeneral) SetPhysicalIOs(physicalIOs []*config.PhysicalIO){
+func (ctx *DevModelGeneral) SetPhysicalIOs(physicalIOs []*config.PhysicalIO) {
 	ctx.physicalIOs = physicalIOs
 }
 
@@ -91,8 +92,22 @@ func (ctx *DevModelGeneral) GetFirstAdapterForSwitches() string {
 }
 
 func createGeneral() (DevModel, error) {
+	physicalIOs := generatePhysicalIOs(2, 0, 0)
+	physicalIOs = append(physicalIOs, &config.PhysicalIO{
+		Ptype:    evecommon.PhyIoType_PhyIoHDMI,
+		Phylabel: "VGA",
+		Phyaddrs: map[string]string{"PciLong": "0000:00:02.0"},
+		//Phyaddrs:     map[string]string{"PciLong": "0000:01:00.0"},
+		Logicallabel: "VGA",
+		Assigngrp:    "VGA",
+		Usage:        evecommon.PhyIoMemberUsage_PhyIoUsageNone,
+		UsagePolicy: &config.PhyIOUsagePolicy{
+			FreeUplink:       false,
+			FallBackPriority: 0,
+		},
+	})
 	return &DevModelGeneral{
-		physicalIOs:        generatePhysicalIOs(2, 0, 0),
+		physicalIOs:        physicalIOs,
 		networks:           generateNetworkConfigs(2, 0),
 		adapters:           generateSystemAdapters(2, 0),
 		adapterForSwitches: []string{"eth1"},

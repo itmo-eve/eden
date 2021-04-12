@@ -86,6 +86,10 @@ func (exp *AppExpectation) createAppInstanceConfig(img *config.Image, netInstanc
 			Name: adapterName,
 		})
 	}
+	adapters = append(adapters, &config.Adapter{
+		Type: evecommon.PhyIoType_PhyIoHDMI,
+		Name: "VGA",
+	})
 	bundle.appInstanceConfig.Adapters = adapters
 	return bundle, nil
 }

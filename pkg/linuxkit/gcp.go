@@ -287,6 +287,11 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 		NetworkInterfaces: []*compute.NetworkInterface{
 			{
 				Network: "global/networks/default",
+				AliasIpRanges: []*compute.AliasIpRange{
+					{
+						IpCidrRange: "/29",
+					},
+				},
 				AccessConfigs: []*compute.AccessConfig{
 					{
 						Type: "ONE_TO_ONE_NAT",

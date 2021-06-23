@@ -184,6 +184,9 @@ func (cloud *CloudCtx) ConfigParse(config *config.EdgeDevConfig) (device *device
 	dev.SetGlobalProfile(config.GlobalProfile)
 	dev.SetLocalProfileServer(config.LocalProfileServer)
 	dev.SetProfileServerToken(config.ProfileServerToken)
+	if config.Baseos != nil && config.Baseos.RetryUpdate != nil {
+		dev.SetUpdateRetryCounter(config.Baseos.RetryUpdate.Counter)
+	}
 	dev.SetRemote(cloud.vars.EveRemote)
 	dev.SetRemoteAddr(cloud.vars.EveRemoteAddr)
 	dev.SetCipherContexts(config.CipherContexts)
@@ -562,6 +565,9 @@ volumeLoop:
 		GlobalProfile:      dev.GetGlobalProfile(),
 		LocalProfileServer: dev.GetLocalProfileServer(),
 		ProfileServerToken: dev.GetProfileServerToken(),
+		Baseos: &config.BaseOS{
+			RetryUpdate: &config.DeviceOpsCmd{Counter: dev.GetUpdateRetryCounter()},
+		},
 	}
 	if pretty {
 		return json.MarshalIndent(devConfig, "", "    ")

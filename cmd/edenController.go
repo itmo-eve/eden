@@ -45,6 +45,36 @@ var edgeNode = &cobra.Command{
 	Long:  `Manage EVE instance.`,
 }
 
+var edgeNodeUpdateRetry = &cobra.Command{
+	Use:   "eveimage-update-retry",
+	Short: "retry update of EVE instance",
+	Long:  `retry update of EVE instance.`,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		assignCobraToViper(cmd)
+		_, err := utils.LoadConfigFile(configFile)
+		if err != nil {
+			return fmt.Errorf("error reading configFile: %s", err.Error())
+		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		changer, err := changerByControllerMode(controllerMode)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ctrl, dev, err := changer.getControllerAndDev()
+		if err != nil {
+			log.Fatalf("getControllerAndDev error: %s", err)
+		}
+		updateRetryCounter := dev.GetUpdateRetryCounter()
+		dev.SetUpdateRetryCounter(updateRetryCounter + 1)
+		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
+			log.Fatalf("setControllerAndDev error: %s", err)
+		}
+		log.Info("Reboot request has been sent")
+	},
+}
+
 var edgeNodeReboot = &cobra.Command{
 	Use:   "reboot",
 	Short: "reboot EVE instance",
@@ -389,6 +419,7 @@ func controllerInit() {
 	edgeNode.AddCommand(edgeNodeEVEImageRemove)
 	edgeNode.AddCommand(edgeNodeUpdate)
 	edgeNode.AddCommand(edgeNodeGetConfig)
+	edgeNode.AddCommand(edgeNodeUpdateRetry)
 	edgeNodeGetConfig.Flags().StringVar(&fileWithConfig, "file", "", "save config to file")
 	edgeNode.AddCommand(edgeNodeSetConfig)
 	edgeNodeSetConfig.Flags().StringVar(&fileWithConfig, "file", "", "set config from file")

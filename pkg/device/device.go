@@ -47,19 +47,21 @@ type Ctx struct {
 	globalProfile              string
 	localProfileServer         string
 	profileServerToken         string
+	updateRetryCounter         uint32
 }
 
 //CreateEdgeNode generates EdgeNode
 func CreateEdgeNode() *Ctx {
 	id, _ := uuid.NewV4()
 	return &Ctx{
-		id:            id,
-		rebootCounter: 1000,
-		rebootState:   false,
-		configVersion: 4,
-		configItems:   map[string]string{},
-		state:         NotOnboarded,
-		epoch:         0,
+		id:                 id,
+		rebootCounter:      1000,
+		rebootState:        false,
+		configVersion:      4,
+		configItems:        map[string]string{},
+		state:              NotOnboarded,
+		epoch:              0,
+		updateRetryCounter: 0,
 	}
 }
 
@@ -195,6 +197,16 @@ func (cfg *Ctx) SetRebootCounter(counter uint32, state bool) {
 //GetRebootCounter getter
 func (cfg *Ctx) GetRebootCounter() (counter uint32, state bool) {
 	return cfg.rebootCounter, cfg.rebootState
+}
+
+//SetUpdateRetryCounter setter
+func (cfg *Ctx) SetUpdateRetryCounter(counter uint32) {
+	cfg.updateRetryCounter = counter
+}
+
+//GetUpdateRetryCounter getter
+func (cfg *Ctx) GetUpdateRetryCounter() (counter uint32) {
+	return cfg.updateRetryCounter
 }
 
 //SetProject setter

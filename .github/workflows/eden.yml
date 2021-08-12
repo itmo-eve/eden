@@ -9,11 +9,13 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: get eden
+        run: |
+          docker run -v $PWD:/out lfedge/eden:30c8b3f cp -a /eden/. /out/
+          sudo chown -R $(whoami) .
+      - name: get eden tests
         uses: actions/checkout@v2
-      - name: setup go
-        uses: actions/setup-go@v2
         with:
-          go-version: '1.15'
+          path: 'eden-tests'
       - name: Check
         run: |
           for addr in $(ip addr list|sed -En -e 's/.*inet ([0-9.]+).*/\1/p')
@@ -26,16 +28,14 @@ jobs:
         run: |
           sudo add-apt-repository ppa:canonical-server/server-backports
           sudo apt install -y qemu-utils qemu-system-x86 jq
-      - name: build eden
-        run: |
-          make build-tests
       - name: run
         run: |
           ./eden config add default
           ./eden config set default --key=eve.accel --value=false
           ./eden config set default --key=eve.cpu --value=2
-          echo > tests/workflow/testdata/eden_stop.txt
-          ./eden test ./tests/workflow -v debug
+          ./eden config set default --key=eden.tests --value=${{ github.workspace }}/eden-tests/tests
+          echo > ${{ github.workspace }}/eden-tests/tests/workflow/testdata/eden_stop.txt
+          ./eden test ${{ github.workspace }}/eden-tests/tests/workflow -v debug
       - name: Collect logs
         if: ${{ always() }}
         run: |

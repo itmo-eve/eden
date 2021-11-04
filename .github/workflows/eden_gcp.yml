@@ -94,7 +94,7 @@ jobs:
           gcloud compute firewall-rules delete eve-eden-actions-${{ matrix.hv }}-${{github.run_number}} || echo "not exists"
           gcloud compute firewall-rules delete eden-actions-${{ matrix.hv }}-${{github.run_number}} || echo "not exists"
           gcloud compute instances delete eve-eden-actions-${{ matrix.hv }}-${{github.run_number}} -q --zone=us-west1-a || echo "not exists"
-          gcloud compute images delete eve-eden-actions-${{ matrix.hv }}-${{github.run_number}} -q || echo "not exists"
+          ./eden utils gcp image --image-name eve-eden-actions-${{ matrix.hv }}-${{github.run_number}} -k "$GOOGLE_APPLICATION_CREDENTIALS" delete || echo "not exists"
       - name: Log counting
         if: ${{ always() }}
         run: |

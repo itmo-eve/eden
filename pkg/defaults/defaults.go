@@ -50,12 +50,12 @@ const (
 
 	//tags, versions, repos
 	DefaultEVETag               = "7.3.0" //DefaultEVETag tag for EVE image
-	DefaultAdamTag              = "0.0.32"
+	DefaultAdamTag              = "storage-keys"
 	DefaultRedisTag             = "6"
 	DefaultRegistryTag          = "2.7"
 	DefaultProcTag              = "83cfe07"
 	DefaultImage                = "library/alpine"
-	DefaultAdamContainerRef     = "lfedge/adam"
+	DefaultAdamContainerRef     = "giggsoff/adam"
 	DefaultRedisContainerRef    = "redis"
 	DefaultRegistryContainerRef = "library/registry"
 	DefaultProcContainerRef     = "lfedge/eden-processing"

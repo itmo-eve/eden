@@ -24,6 +24,8 @@ import (
 
 const pollingInterval = time.Second
 const timeout = 60
+const nested = true
+const vtpm = true
 
 // GCPClient contains state required for communication with GCP
 type GCPClient struct {
@@ -163,6 +165,12 @@ func (g GCPClient) CreateImage(name, storageURL, family string, nested, replace 
 		imgObj.Licenses = []string{"projects/vm-options/global/licenses/enable-vmx"}
 	}
 
+	if vtpm {
+		imgObj.GuestOsFeatures = []*compute.GuestOsFeature{
+			{Type: "UEFI_COMPATIBLE"},
+		}
+	}
+
 	op, err := g.compute.Images.Insert(g.projectName, imgObj).Do()
 	if err != nil {
 		return err
@@ -224,7 +232,7 @@ func (g GCPClient) ListImages() ([]string, error) {
 }
 
 // CreateInstance creates and starts an instance on GCP
-func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, nested, replace bool) error {
+func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(name, zone, true); err != nil {
 			return err
@@ -266,7 +274,16 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 		} else {
 			diskSizeGb = int64(convertMBtoGB(disk.Size))
 		}
-		diskOp, err := g.compute.Disks.Insert(g.projectName, zone, &compute.Disk{Name: diskName, SizeGb: diskSizeGb}).Do()
+		disk := &compute.Disk{Name: diskName, SizeGb: diskSizeGb}
+		if vtpm {
+			disk.GuestOsFeatures = []*compute.GuestOsFeature{
+				{Type: "UEFI_COMPATIBLE"},
+			}
+		}
+		diskOp, err := g.compute.Disks.Insert(g.projectName, zone, disk).Do()
+		if err != nil {
+			return err
+		}
 		if err != nil {
 			return err
 		}
@@ -311,7 +328,9 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 			},
 		},
 	}
-
+	if vtpm {
+		instanceObj.ShieldedInstanceConfig = &compute.ShieldedInstanceConfig{EnableVtpm: true}
+	}
 	if nested {
 		// TODO(rn): We could/should check here if the image has nested virt enabled
 		instanceObj.MinCpuPlatform = "Intel Skylake"

@@ -38,6 +38,7 @@ const (
 	DefaultDomain          = "mydomain.adam"
 	DefaultIP              = "192.168.0.1"
 	DefaultEVEIP           = "192.168.1.2"
+	DefaultEVEDNS          = "8.8.8.8"
 	DefaultEserverPort     = 8888
 	DefaultTelnetPort      = 7777
 	DefaultQemuMonitorPort = 7788

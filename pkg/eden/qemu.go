@@ -76,6 +76,9 @@ func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial string, eveTe
 		}
 		qemuOptions += fmt.Sprintf(",hostfwd=tcp::%d-:%d", origPort+offset, newPort+offset)
 	}
+	if qemuOS == "darwin" {
+		qemuOptions += fmt.Sprintf(",dns=%s", defaults.DefaultEVEDNS)
+	}
 	qemuOptions += fmt.Sprintf(" -device %s,netdev=eth%d ", netDev, 0)
 	offset += 10
 
@@ -92,6 +95,9 @@ func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial string, eveTe
 			break
 		}
 		qemuOptions += fmt.Sprintf(",hostfwd=tcp::%d-:%d", origPort+offset, newPort+offset)
+	}
+	if qemuOS == "darwin" {
+		qemuOptions += fmt.Sprintf(",dns=%s", defaults.DefaultEVEDNS)
 	}
 	qemuOptions += fmt.Sprintf(" -device %s,netdev=eth%d ", netDev, 1)
 

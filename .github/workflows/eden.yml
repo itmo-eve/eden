@@ -8,6 +8,12 @@ jobs:
   integration:
     runs-on: ubuntu-20.04
     steps:
+      - name: check
+        run: |
+          IMGS=$(docker images --format "{{.Repository}}:{{.Tag}}")
+          for i in ${IMGS}; do
+            echo "$i"
+          done
       - name: get eden
         uses: actions/checkout@v2
       - name: setup go

@@ -2,7 +2,9 @@ package eden
 
 import (
 	"bytes"
+	"crypto/md5"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -31,6 +33,62 @@ import (
 type LinkState struct {
 	InterfaceName string
 	IsUP          bool
+}
+
+//GetSwtpmContainerNameBySocketPath returns swtpm container name by socket location
+func GetSwtpmContainerNameBySocketPath(swtpmSockPath string) string {
+	hash := md5.New()
+	hash.Write([]byte(swtpmSockPath))
+	return fmt.Sprintf("%s-%s", defaults.DefaultSwtpmContainerName, hex.EncodeToString(hash.Sum(nil)))
+}
+
+//StartSwtpm function to run swtpm in docker
+func StartSwtpm(swtpmSock string) (err error) {
+	sockDir, sockFile := filepath.Split(swtpmSock)
+	err = os.MkdirAll(sockDir, os.ModeDir)
+	if err != nil {
+		return err
+	}
+	volumeMap := map[string]string{"/swtpm": sockDir}
+	if err != nil {
+		return err
+	}
+	name := GetSwtpmContainerNameBySocketPath(swtpmSock)
+	swtpmCommand := strings.Fields(fmt.Sprintf("socket --tpmstate dir=/swtpm --ctrl type=unixio,path=/swtpm/%s --log level=20 --tpm2", sockFile))
+	state, err := utils.StateContainer(name)
+	if err != nil {
+		return fmt.Errorf("StartSwtpm: error in get state of swtpm container: %s", err)
+	}
+	if state == "" {
+		if err := utils.CreateAndRunContainer(name, defaults.DefaultSwtpmContainerRef+":"+defaults.DefaultSwtpmContainerTag, nil, volumeMap, swtpmCommand, nil); err != nil {
+			return fmt.Errorf("StartSwtpm: error in create swtpm container: %s", err)
+		}
+	} else if !strings.Contains(state, "running") {
+		if err := utils.StartContainer(name); err != nil {
+			return fmt.Errorf("StartSwtpm: error in restart swtpm container: %s", err)
+		}
+	}
+	return nil
+}
+
+//StopSwtpm function stop swtpm container
+func StopSwtpm(swtpmSockPath string) (err error) {
+	if err := utils.StopContainer(GetSwtpmContainerNameBySocketPath(swtpmSockPath), true); err != nil {
+		return fmt.Errorf("StopSwtpm: error in stop container: %s", err)
+	}
+	return nil
+}
+
+//StatusSwtpm function return status of swtpm container
+func StatusSwtpm(swtpmSockPath string) (status string, err error) {
+	state, err := utils.StateContainer(GetSwtpmContainerNameBySocketPath(swtpmSockPath))
+	if err != nil {
+		return "", fmt.Errorf("StatusSwtpm: error in get state of swtpm container: %s", err)
+	}
+	if state == "" {
+		return "container doesn't exist", nil
+	}
+	return state, nil
 }
 
 //StartRedis function run redis in docker with mounted redisPath:/data
@@ -696,7 +754,7 @@ func MakeEveInRepo(distEve string, configPath string, arch string, hv string, im
 }
 
 //CleanContext cleanup only context data
-func CleanContext(eveDist, certsDist, imagesDist, evePID, eveUUID, vmName string, configSaved string, remote bool) (err error) {
+func CleanContext(eveDist, certsDist, imagesDist, evePID, eveUUID, vmName, swtpmSockPath string, configSaved string, remote bool) (err error) {
 	edenDir, err := utils.DefaultEdenDir()
 	if err != nil {
 		return fmt.Errorf("CleanContext: %s", err)
@@ -761,6 +819,11 @@ func CleanContext(eveDist, certsDist, imagesDist, evePID, eveUUID, vmName string
 			} else {
 				log.Infof("EVE stopped")
 			}
+			if err := StopSwtpm(swtpmSockPath); err != nil {
+				log.Infof("cannot stop swtpm: %s", err)
+			} else {
+				log.Infof("swtpm stopped")
+			}
 		}
 	}
 	if _, err = os.Stat(eveDist); !os.IsNotExist(err) {
@@ -787,7 +850,7 @@ func CleanContext(eveDist, certsDist, imagesDist, evePID, eveUUID, vmName string
 }
 
 //StopEden teardown Eden
-func StopEden(adamRm, redisRm, registryRm, eserverRm, eveRemote bool, evePidFile string, devModel string, vmName string) {
+func StopEden(adamRm, redisRm, registryRm, eserverRm, eveRemote bool, evePidFile, devModel, vmName, swtpmSockPath string) {
 	if err := StopAdam(adamRm); err != nil {
 		log.Infof("cannot stop adam: %s", err)
 	} else {
@@ -827,13 +890,21 @@ func StopEden(adamRm, redisRm, registryRm, eserverRm, eveRemote bool, evePidFile
 			} else {
 				log.Infof("EVE stopped")
 			}
+			if swtpmSockPath != "" {
+				if err := StopSwtpm(swtpmSockPath); err != nil {
+					log.Infof("cannot stop swtpm: %s", err)
+				} else {
+					log.Infof("swtpm stopped")
+				}
+			}
 		}
 	}
 }
 
 //CleanEden teardown Eden and cleanup
 func CleanEden(eveDist, adamDist, certsDist, imagesDist, eserverDist, redisDist, registryDist, configDir, evePID string, configSaved string, remote bool, devModel string, vmName string) (err error) {
-	StopEden(true, true, true, true, remote, evePID, devModel, vmName)
+	tpmSock := filepath.Join(imagesDist, defaults.DefaultSwtpmSockFile)
+	StopEden(true, true, true, true, remote, evePID, devModel, vmName, tpmSock)
 	if _, err = os.Stat(eveDist); !os.IsNotExist(err) {
 		if err = os.RemoveAll(eveDist); err != nil {
 			return fmt.Errorf("CleanEden: error in %s delete: %s", eveDist, err)

@@ -75,6 +75,7 @@ var startCmd = &cobra.Command{
 			apiV1 = viper.GetBool("adam.v1")
 			cpus = viper.GetInt("eve.cpu")
 			mem = viper.GetInt("eve.ram")
+			gcpvTPM = viper.GetBool("eve.tpm")
 		}
 		return nil
 	},
@@ -84,6 +85,7 @@ var startCmd = &cobra.Command{
 		} else {
 			log.Infof("Redis is running and accessible on port %d", redisPort)
 		}
+
 		if !adamRemoteRedis {
 			adamRemoteRedisURL = ""
 		}
@@ -118,9 +120,18 @@ var startCmd = &cobra.Command{
 				log.Infof("EVE is starting in Virtual Box")
 			}
 		} else {
+			tpmSock := ""
+			if gcpvTPM {
+				tpmSock = filepath.Join(filepath.Dir(eveImageFile), defaults.DefaultSwtpmSockFile)
+				if err := eden.StartSwtpm(tpmSock); err != nil {
+					log.Errorf("cannot start swtpm: %s", err)
+				} else {
+					log.Infof("swtpm is running and accessible via unix socket %s", tpmSock)
+				}
+			}
 			if err := eden.StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial, eveTelnetPort,
 				qemuMonitorPort, qemuNetdevSocketPort, hostFwd, qemuAccel, qemuConfigFile, eveLogFile,
-				evePidFile, tapInterface, eveEthLoops,false); err != nil {
+				evePidFile, tapInterface, eveEthLoops, tpmSock, false); err != nil {
 				log.Errorf("cannot start eve: %s", err)
 			} else {
 				log.Infof("EVE is starting")

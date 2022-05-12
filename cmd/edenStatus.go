@@ -232,6 +232,18 @@ var statusCmd = &cobra.Command{
 						eveStatusParallels()
 					} else {
 						eveStatusQEMU()
+						vTPM := viper.GetBool("eve.tpm")
+						if vTPM {
+							eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
+							tpmSock := filepath.Join(filepath.Dir(eveImageFile), defaults.DefaultSwtpmSockFile)
+							statusSwtpm, err := eden.StatusSwtpm(tpmSock)
+							if err != nil {
+								log.Errorf("%s cannot obtain status of swtpm process: %s", statusWarn(), err)
+							} else {
+								fmt.Printf("%s swtpm status: %s\n", representContainerStatus(lastWord(statusSwtpm)), statusSwtpm)
+								fmt.Printf("\tFor local swtpm you can run 'docker logs %s' to see logs\n", eden.GetSwtpmContainerNameBySocketPath(tpmSock))
+							}
+						}
 					}
 				}
 				if statusAdam != "container doesn't exist" {

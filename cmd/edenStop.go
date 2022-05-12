@@ -32,11 +32,13 @@ var stopCmd = &cobra.Command{
 			evePidFile = utils.ResolveAbsPath(viper.GetString("eve.pid"))
 			eveRemote = viper.GetBool("eve.remote")
 			devModel = viper.GetString("eve.devmodel")
+			eveImageFile = utils.ResolveAbsPath(viper.GetString("eve.image-file"))
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		eden.StopEden(adamRm, redisRm, registryRm, eserverRm, eveRemote, evePidFile, devModel, vmName)
+		tpmSock := filepath.Join(filepath.Dir(eveImageFile), defaults.DefaultSwtpmSockFile)
+		eden.StopEden(adamRm, redisRm, registryRm, eserverRm, eveRemote, evePidFile, devModel, vmName, tpmSock)
 	},
 }
 

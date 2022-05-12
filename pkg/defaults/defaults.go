@@ -26,6 +26,7 @@ const (
 	DefaultSSHKey           = "certs/id_rsa.pub" //file for save ssh key
 	DefaultConfigHidden     = ".eden-config.yml" //file to save config get --all
 	DefaultConfigSaved      = "config_saved.yml" //file to save config during 'eden setup'
+	DefaultSwtpmSockFile    = "swtpm-sock"       //file to communicate with swtpm
 
 	DefaultContext = "default" //default context name
 
@@ -60,6 +61,8 @@ const (
 	DefaultRedisContainerRef    = "redis"
 	DefaultRegistryContainerRef = "library/registry"
 	DefaultProcContainerRef     = "lfedge/eden-processing"
+	DefaultSwtpmContainerRef    = "lfedge/eden-swtpm"
+	DefaultSwtpmContainerTag    = "latest"
 	DefaultEveRepo              = "https://github.com/lf-edge/eve.git"
 	DefaultEveRegistry          = "lfedge/eve"
 	DefaultRegistry             = "docker.io"
@@ -94,6 +97,7 @@ const (
 	DefaultControllerModePattern = `^(?P<Type>(file|proto|adam|zedcloud)):\/\/(?P<URL>.*)$`
 	DefaultPodLinkPattern        = `^(?P<TYPE>(oci|docker|http[s]{0,1}|file|directory)):\/\/(?P<TAG>[^:]+):*(?P<VERSION>.*)$`
 	DefaultRedisContainerName    = "eden_redis"
+	DefaultSwtpmContainerName    = "eden_swtpm"
 	DefaultAdamContainerName     = "eden_adam"
 	DefaultRegistryContainerName = "eden_registry"
 	DefaultEServerContainerName  = "eden_eserver"

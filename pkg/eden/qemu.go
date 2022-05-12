@@ -18,7 +18,7 @@ import (
 //StartEVEQemu function run EVE in qemu
 func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial string, eveTelnetPort,
 	qemuMonitorPort, qemuNetdevSocketPort int, qemuHostFwd map[string]string, qemuAccel bool,
-	qemuConfigFile, logFile, pidFile string, tapInterface string, ethLoops int, foreground bool) (err error) {
+	qemuConfigFile, logFile, pidFile string, tapInterface string, ethLoops int, tpmSock string, foreground bool) (err error) {
 	qemuCommand := ""
 	qemuOptions := "-display none -nodefaults -no-user-config "
 	qemuOptions += fmt.Sprintf("-serial chardev:char0 -chardev socket,id=char0,port=%d,host=localhost,server,nodelay,nowait,telnet,logfile=%s ", eveTelnetPort, logFile)
@@ -117,6 +117,10 @@ func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial string, eveTe
 		qemuOptions += fmt.Sprintf(" -device %s,netdev=eth%d ", netDev, ethIndex)
 		ethIndex++
 		qemuNetdevSocketPort++
+	}
+
+	if tpmSock != "" {
+		qemuOptions += fmt.Sprintf("-chardev socket,id=chrtpm,path=%s -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0 ", tpmSock)
 	}
 
 	if qemuOS == "" {

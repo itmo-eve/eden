@@ -199,6 +199,13 @@ func (cloud *CloudCtx) ConfigParse(config *config.EdgeDevConfig) (device *device
 	}
 	dev.SetContentTreeConfig(contentTrees)
 
+	var snapshots []string
+	for _, el := range config.Snapshots {
+		_ = cloud.AddSnapshot(el)
+		snapshots = append(snapshots, el.Uuid)
+	}
+	dev.SetSnapshotConfigs(snapshots)
+
 	if config.Reboot != nil {
 		dev.SetRebootCounter(config.Reboot.Counter, config.Reboot.DesiredState)
 	}
@@ -587,6 +594,14 @@ volumeLoop:
 		}
 		systemAdapterConfigs = append(systemAdapterConfigs, systemAdapterConfig)
 	}
+	var snapshots []*config.SnapshotConfig
+	for _, id := range dev.GetSnapshots() {
+		snapshotConfig, err := cloud.GetSnapshot(id)
+		if err != nil {
+			return nil, err
+		}
+		snapshots = append(snapshots, snapshotConfig)
+	}
 	//we need to sort to keep sha of config persist
 	var configItems []*config.ConfigItem
 	keys := make([]string, len(dev.GetConfigItems()))
@@ -614,6 +629,7 @@ volumeLoop:
 		},
 		Volumes:            volumes,
 		ContentInfo:        contentTrees,
+		Snapshots:          snapshots,
 		Apps:               applicationInstances,
 		Networks:           networkConfigs,
 		Datastores:         dataStores,

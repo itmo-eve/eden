@@ -99,6 +99,8 @@ func init() {
 	packetInit()
 	rootCmd.AddCommand(rolCmd)
 	rolInit()
+	rootCmd.AddCommand(snapshotCmd)
+	snapshotInit()
 }
 
 // Execute primary function for cobra

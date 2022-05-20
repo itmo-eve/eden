@@ -38,6 +38,7 @@ type Ctx struct {
 	applicationInstanceConfigs []string
 	contentTrees               []string
 	volumes                    []string
+	snapshots                  []string
 	configItems                map[string]string
 	rebootCounter              uint32
 	rebootState                bool
@@ -202,6 +203,15 @@ func (cfg *Ctx) GetContentTrees() []string { return cfg.contentTrees }
 //SetVolumeConfigs set volumes configs by configIDs from cloud
 func (cfg *Ctx) SetVolumeConfigs(configIDs []string) *Ctx {
 	cfg.volumes = configIDs
+	return cfg
+}
+
+//GetSnapshots return snapshots of device
+func (cfg *Ctx) GetSnapshots() []string { return cfg.snapshots }
+
+//SetSnapshotConfigs set snapshots configs by configIDs from cloud
+func (cfg *Ctx) SetSnapshotConfigs(configIDs []string) *Ctx {
+	cfg.snapshots = configIDs
 	return cfg
 }
 

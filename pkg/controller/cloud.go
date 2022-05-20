@@ -16,6 +16,7 @@ type CloudCtx struct {
 	images               []*config.Image
 	contentTrees         []*config.ContentTree
 	volumes              []*config.Volume
+	snapshots            []*config.SnapshotConfig
 	baseOS               []*config.BaseOSConfig
 	networkInstances     []*config.NetworkInstanceConfig
 	networks             []*config.NetworkConfig
@@ -80,6 +81,10 @@ type Cloud interface {
 	AddApplicationInstanceConfig(applicationInstanceConfig *config.AppInstanceConfig) error
 	RemoveApplicationInstanceConfig(id string) error
 	ListApplicationInstanceConfig() []*config.AppInstanceConfig
+	GetSnapshot(id string) (*config.SnapshotConfig, error)
+	AddSnapshot(*config.SnapshotConfig) error
+	RemoveSnapshot(id string) error
+	ListSnapshot() []*config.SnapshotConfig
 	StateUpdate(dev *device.Ctx) (err error)
 	OnBoardDev(node *device.Ctx) error
 	GetVars() *utils.ConfigVars

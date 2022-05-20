@@ -17,6 +17,7 @@ type State struct {
 	applications   map[string]*AppInstState
 	networks       map[string]*NetInstState
 	volumes        map[string]*VolInstState
+	snapshots      map[string]*SnapshotInstState
 	infoAndMetrics *projects.State
 	device         *device.Ctx
 }
@@ -34,6 +35,9 @@ func Init(ctrl controller.Cloud, dev *device.Ctx) (ctx *State) {
 	}
 	if err := ctx.initNetworks(ctrl, dev); err != nil {
 		log.Fatalf("EVE State initNetworks error: %s", err)
+	}
+	if err := ctx.initSnapshots(ctrl, dev); err != nil {
+		log.Fatalf("EVE State initSnapshots error: %s", err)
 	}
 	return
 }
@@ -76,12 +80,24 @@ func (ctx *State) Volumes() []*VolInstState {
 	return v
 }
 
+//Snapshots extracts snapshots states
+func (ctx *State) Snapshots() []*SnapshotInstState {
+	v := make([]*SnapshotInstState, 0, len(ctx.snapshots))
+	for _, value := range ctx.snapshots {
+		if !value.deleted {
+			v = append(v, value)
+		}
+	}
+	return v
+}
+
 //InfoCallback should be assigned to feed new values from info messages into state
 func (ctx *State) InfoCallback() einfo.HandlerFunc {
 	return func(msg *info.ZInfoMsg, ds []*einfo.ZInfoMsgInterface) bool {
 		ctx.processVolumesByInfo(msg)
 		ctx.processApplicationsByInfo(msg)
 		ctx.processNetworksByInfo(msg)
+		ctx.processSnapshotsByInfo(msg)
 		if err := ctx.infoAndMetrics.GetInfoProcessingFunction()(msg); err != nil {
 			log.Fatalf("EVE State GetInfoProcessingFunction error: %s", err)
 		}
@@ -95,6 +111,7 @@ func (ctx *State) MetricCallback() emetric.HandlerFunc {
 		ctx.processVolumesByMetric(msg)
 		ctx.processApplicationsByMetric(msg)
 		ctx.processNetworksByMetric(msg)
+		ctx.processSnapshotsByMetric(msg)
 		if err := ctx.infoAndMetrics.GetMetricProcessingFunction()(msg); err != nil {
 			log.Fatalf("EVE State GetMetricProcessingFunction error: %s", err)
 		}

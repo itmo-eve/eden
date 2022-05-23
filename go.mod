@@ -68,3 +68,5 @@ require (
 replace github.com/lf-edge/eden/eserver => ./eserver
 
 replace github.com/docker/distribution => github.com/docker/distribution v0.0.0-20190205005809-0d3efadf0154
+
+replace github.com/lf-edge/eve/api/go => github.com/itmo-eve/eve/api/go v0.0.0-20220520132904-a354c4e1fc00

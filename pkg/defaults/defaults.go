@@ -94,7 +94,7 @@ const (
 	DefaultTestScenario          = ""
 	DefaultRootFSVersionPattern  = `^.*-(xen|kvm|acrn|rpi|rpi-xen|rpi-kvm)-(amd64|arm64)$`
 	DefaultControllerModePattern = `^(?P<Type>(file|proto|adam|zedcloud)):\/\/(?P<URL>.*)$`
-	DefaultPodLinkPattern        = `^(?P<TYPE>(oci|docker|http[s]{0,1}|file|directory)):\/\/(?P<TAG>[^:]+):*(?P<VERSION>.*)$`
+	DefaultPodLinkPattern        = `^(?P<TYPE>(oci|docker|http[s]{0,1}|file|directory|azure(-http){0,1})):\/\/(?P<TAG>[^:?]+):*(?P<VERSION>[^?]*)[?]{0,1}(?P<OPTIONS>.*)$`
 	DefaultRedisContainerName    = "eden_redis"
 	DefaultAdamContainerName     = "eden_adam"
 	DefaultRegistryContainerName = "eden_registry"

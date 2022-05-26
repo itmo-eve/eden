@@ -1,10 +1,12 @@
 package expect
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -74,9 +76,52 @@ func (exp *AppExpectation) createImageHTTP(id uuid.UUID, dsID string) *config.Im
 	}
 }
 
+//createImageAzure generate image config for azure type of image
+func (exp *AppExpectation) createImageAzure(id uuid.UUID, dsID string) *config.Image {
+	u, err := url.Parse(exp.appLink)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var fileSize int64
+	if !u.Query().Has("sha256") {
+		log.Fatal("please provide ?sha256=value in url")
+	}
+	sha256 := u.Query().Get("sha256")
+	if u.Query().Has("size") {
+		fileSize, err = strconv.ParseInt(u.Query().Get("size"), 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	filePath := path.Base(u.Path)
+	return &config.Image{
+		Uuidandversion: &config.UUIDandVersion{
+			Uuid:    id.String(),
+			Version: "1",
+		},
+		Name:      filePath,
+		Iformat:   exp.imageFormatEnum(),
+		DsId:      dsID,
+		SizeBytes: fileSize,
+		Sha256:    sha256,
+	}
+}
+
 //checkImageHTTP checks if provided img match expectation
 func (exp *AppExpectation) checkImageHTTP(img *config.Image, dsID string) bool {
 	if img.DsId == dsID && img.Name == path.Join("eserver", path.Base(exp.appURL)) && img.Iformat == config.Format_QCOW2 {
+		return true
+	}
+	return false
+}
+
+//checkImageAzure checks if provided img match expectation
+func (exp *AppExpectation) checkImageAzure(img *config.Image, dsID string) bool {
+	u, err := url.Parse(exp.appLink)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if img.DsId == dsID && img.Name == path.Base(u.Path) && img.Iformat == config.Format_QCOW2 {
 		return true
 	}
 	return false
@@ -97,6 +142,24 @@ func (exp *AppExpectation) checkDataStoreHTTP(ds *config.DatastoreConfig) bool {
 			log.Fatal(err)
 		}
 		if exp.httpDirectLoad && ds.Fqdn == fmt.Sprintf("%s://%s", u.Scheme, u.Hostname()) {
+			return true
+		}
+	}
+	return false
+}
+
+//checkDataStoreAzure checks if provided ds match expectation
+func (exp *AppExpectation) checkDataStoreAzure(ds *config.DatastoreConfig) bool {
+	if ds.DType == config.DsType_DsAzureBlob {
+		u, err := url.Parse(exp.appLink)
+		if err != nil {
+			log.Fatal(err)
+		}
+		scheme := "https"
+		if exp.useHttp {
+			scheme = "http"
+		}
+		if ds.Fqdn == fmt.Sprintf("%s://%s", scheme, path.Join(u.Host, path.Dir(u.Path))) {
 			return true
 		}
 	}
@@ -145,6 +208,41 @@ func (exp *AppExpectation) createDataStoreHTTP(id uuid.UUID) *config.DatastoreCo
 		ds.Fqdn = fmt.Sprintf("%s://%s", u.Scheme, u.Hostname())
 	} else {
 		ds.Fqdn = fmt.Sprintf("http://%s:%s", exp.ctrl.GetVars().AdamDomain, exp.ctrl.GetVars().EServerPort)
+	}
+	return ds
+}
+
+//createDataStoreAzure creates datastore, pointed onto azure endpoint
+func (exp *AppExpectation) createDataStoreAzure(id uuid.UUID) *config.DatastoreConfig {
+	ds := &config.DatastoreConfig{
+		Id:         id.String(),
+		DType:      config.DsType_DsAzureBlob,
+		ApiKey:     "",
+		Password:   "",
+		Dpath:      "",
+		Region:     "",
+		CipherData: nil,
+	}
+	u, err := url.Parse(exp.appLink)
+	if err != nil {
+		log.Fatal(err)
+	}
+	scheme := "https"
+	if exp.useHttp {
+		scheme = "http"
+	}
+	ds.Fqdn = fmt.Sprintf("%s://%s", scheme, path.Join(u.Host, path.Dir(u.Path)))
+	if u.User != nil {
+		ds.ApiKey = u.User.Username()
+		var hasPassword bool
+		ds.Password, hasPassword = u.User.Password()
+		if hasPassword {
+			data, err := base64.StdEncoding.DecodeString(ds.Password)
+			if err != nil {
+				log.Fatal("Password must be base64 encoded", err)
+			}
+			ds.Password = string(data)
+		}
 	}
 	return ds
 }

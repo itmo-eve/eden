@@ -27,6 +27,7 @@ var (
 	httpsApp     appType = 3 //for application with image from https link
 	fileApp      appType = 4 //for application with image from file path
 	directoryApp appType = 5 //for application with files from directory
+	azureApp     appType = 6 //for application with files from azure blob storage
 )
 
 //ACE is an access control entry (a single entry of ACL).
@@ -85,6 +86,7 @@ type AppExpectation struct {
 	profiles          []string
 	datastoreOverride string
 	startDelay        uint32
+	useHttp           bool //use https for access
 }
 
 //use provided appLink to try predict format of volume
@@ -245,6 +247,12 @@ func AppExpectationFromURL(ctrl controller.Cloud, device *device.Ctx, appLink st
 		expectation.appType = fileApp
 	case "directory":
 		expectation.appType = directoryApp
+	case "azure":
+		expectation.appType = azureApp
+		expectation.useHttp = false
+	case "azure-http":
+		expectation.appType = azureApp
+		expectation.useHttp = true
 	case "":
 		expectation.appType = dockerApp
 	default:

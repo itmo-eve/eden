@@ -108,7 +108,7 @@ func processVLANs(vlans []string) (map[string]int, error) {
 
 //podDeployCmd is command for deploy application on EVE
 var podDeployCmd = &cobra.Command{
-	Use:   "deploy (docker|http(s)|file|directory)://(<TAG|PATH>[:<VERSION>] | <URL for qcow2 image> | <path to qcow2 image>)",
+	Use:   "deploy (docker|http(s)|file|directory|azure[-http])://(<TAG|PATH>[:<VERSION>] | <URL for qcow2 image> | <path to qcow2 image> [?sha256=<sha256 of image>&size=<size of image in bytes>])",
 	Short: "Deploy app in pod",
 	Long:  `Deploy app in pod.`,
 	Args:  cobra.ExactArgs(1),

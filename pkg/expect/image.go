@@ -18,6 +18,8 @@ func (exp *AppExpectation) checkImage(img *config.Image, dsID string) bool {
 		return exp.checkImageDocker(img, dsID)
 	case httpApp, httpsApp, fileApp:
 		return exp.checkImageHTTP(img, dsID)
+	case azureApp:
+		return exp.checkImageAzure(img, dsID)
 	}
 	return false
 }
@@ -37,6 +39,8 @@ func (exp *AppExpectation) createImage(dsID string) (*config.Image, error) {
 		return exp.createImageFile(id, dsID), nil
 	case directoryApp:
 		return exp.createImageDirectory(id, dsID), nil
+	case azureApp:
+		return exp.createImageAzure(id, dsID), nil
 	default:
 		return nil, fmt.Errorf("not supported appType")
 	}
@@ -48,7 +52,7 @@ func (exp *AppExpectation) imageFormatEnum() config.Format {
 	switch exp.appType {
 	case dockerApp:
 		defaultFormat = config.Format_CONTAINER
-	case httpApp, httpsApp, fileApp:
+	case httpApp, httpsApp, fileApp, azureApp:
 		defaultFormat = config.Format_QCOW2
 	default:
 		defaultFormat = config.Format_QCOW2

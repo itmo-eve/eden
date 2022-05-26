@@ -58,7 +58,7 @@ var volumeLsCmd = &cobra.Command{
 
 //volumeCreateCmd is a command to create volume
 var volumeCreateCmd = &cobra.Command{
-	Use:   "create <(docker|http(s)|file)://(<TAG>[:<VERSION>] | <URL for qcow2 image> | <path to qcow2 image>| blank)>",
+	Use:   "create <(docker|http(s)|file|directory|azure[-http])://(<TAG>[:<VERSION>] | <URL for qcow2 image> | <path to qcow2 image>| blank [?sha256=<sha256 of image>&size=<size of image in bytes>])>",
 	Short: "Create volume",
 	Args:  cobra.ExactArgs(1),
 	PreRunE: func(cmd *cobra.Command, args []string) error {

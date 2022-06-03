@@ -9,11 +9,19 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: src
           fetch-depth: 0
-
+      - name: setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.17'
+      - name: vendor packages
+        run: |
+          for f in $(find ./src -name go.mod)
+            do (cd $(dirname $f); go mod vendor)
+          done
       - name: Yetus
         uses: apache/yetus-test-patch-action@0.14.0
         with:

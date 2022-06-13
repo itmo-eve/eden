@@ -31,6 +31,7 @@ jobs:
           sudo df -h
           sudo swapoff -a
           sudo free
+          sudo lscpu
       - name: setup
         run: |
           sudo add-apt-repository ppa:stefanberger/swtpm-jammy
@@ -64,7 +65,9 @@ jobs:
           ./eden info > info.log || echo "no info"
           ./eden metric > metric.log || echo "no metric"
           ./eden netstat > netstat.log || echo "no netstat"
-          cp dist/default-eve.log console.log || echo "no device log"
+          cp dist/default-eve.log qemu.out.log || echo "no qemu log"
+          cp dist/default-eve.log.debug qemu.debug.log || echo "no qemu debug log"
+          cp dist/default-eve.log.con console.log || echo "no console log"
           docker logs eden_adam > adam.log 2>&1 || echo "no adam log"
       - name: Log counting
         if: ${{ always() }}
@@ -95,5 +98,10 @@ jobs:
               ${{ github.workspace }}/info.log
               ${{ github.workspace }}/metric.log
               ${{ github.workspace }}/netstat.log
+              ${{ github.workspace }}/qemu.out.log
+              ${{ github.workspace }}/qemu.debug.log
               ${{ github.workspace }}/console.log
               ${{ github.workspace }}/adam.log
+      - name: Setup upterm session
+        if: ${{ failure() }}
+        uses: lhotari/action-upterm@v1

@@ -45,7 +45,8 @@ func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial string, eveTe
 	qemuConfigFile, logFile, pidFile string, tapInterface string, ethLoops int, swtpm, foreground bool) (err error) {
 	qemuCommand := ""
 	qemuOptions := "-display none -nodefaults -no-user-config "
-	qemuOptions += fmt.Sprintf("-serial chardev:char0 -chardev socket,id=char0,port=%d,host=localhost,server,nodelay,nowait,telnet,logfile=%s ", eveTelnetPort, logFile)
+	qemuOptions += fmt.Sprintf("-serial chardev:char0 -chardev socket,id=char0,port=%d,host=localhost,server,nodelay,nowait,telnet,logfile=%s ", eveTelnetPort, fmt.Sprintf("%s.con", logFile))
+	qemuOptions += fmt.Sprintf("-D %s ", fmt.Sprintf("%s.debug", logFile))
 	netDev := "e1000"
 	tpmDev := "tpm-tis"
 	if qemuARCH == "" {
@@ -157,7 +158,7 @@ func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, qemuSMBIOSSerial string, eveTe
 		return fmt.Errorf("StartEVEQemu: OS not supported: %s", qemuOS)
 	}
 	qemuOptions += fmt.Sprintf("-drive file=%s,format=qcow2 ", eveImageFile)
-	qemuOptions += "-watchdog-action reset "
+	qemuOptions += "-watchdog-action inject-nmi "
 	if qemuConfigFile != "" {
 		qemuOptions += fmt.Sprintf("-readconfig %s ", qemuConfigFile)
 	}

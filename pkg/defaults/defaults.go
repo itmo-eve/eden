@@ -52,7 +52,7 @@ const (
 	DefaultRegistryPort         = 5050
 
 	//tags, versions, repos
-	DefaultEVETag               = "0.0.0-master-e77d8e56" // DefaultEVETag tag for EVE image
+	DefaultEVETag               = "0.0.0-debug-kernel-80332a35" // DefaultEVETag tag for EVE image
 	DefaultAdamTag              = "0.0.39"
 	DefaultRedisTag             = "6"
 	DefaultRegistryTag          = "2.7"
@@ -63,7 +63,7 @@ const (
 	DefaultRegistryContainerRef = "library/registry"
 	DefaultProcContainerRef     = "lfedge/eden-processing"
 	DefaultEveRepo              = "https://github.com/lf-edge/eve.git"
-	DefaultEveRegistry          = "lfedge/eve"
+	DefaultEveRegistry          = "giggsoff/eve"
 	DefaultRegistry             = "docker.io"
 
 	DefaultSFTPUser      = "user"

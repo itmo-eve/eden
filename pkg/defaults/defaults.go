@@ -52,7 +52,7 @@ const (
 	DefaultRegistryPort         = 5050
 
 	//tags, versions, repos
-	DefaultEVETag               = "0.0.0-fixed-vhost-b989e2f8" // DefaultEVETag tag for EVE image
+	DefaultEVETag               = "0.0.0-new-kernel-922f1502" // DefaultEVETag tag for EVE image
 	DefaultAdamTag              = "0.0.39"
 	DefaultRedisTag             = "6"
 	DefaultRegistryTag          = "2.7"
@@ -115,7 +115,7 @@ const (
 
 	DefaultQemuAccelDarwin     = "-machine q35,accel=hvf -cpu kvm64,kvmclock=off "
 	DefaultQemuAccelLinuxAmd64 = "-machine q35,accel=kvm,dump-guest-core=off,kernel-irqchip=split -cpu host,invtsc=on,kvmclock=off -device intel-iommu,intremap=on,caching-mode=on,aw-bits=48 "
-	DefaultQemulAmd64          = "-machine q35,accel=tcg,graphics=off --cpu SandyBridge -no-hpet -global kvm-pit.lost_tick_policy=discard "
+	DefaultQemulAmd64          = "-machine q35,accel=tcg,graphics=off --cpu SandyBridge "
 
 	DefaultQemuAccelArm64 = "-machine virt,accel=kvm,usb=off,dump-guest-core=off -cpu host "
 	DefaultQemulArm64     = "-machine virt,virtualization=true -cpu cortex-a57 "

@@ -52,13 +52,13 @@ const (
 	DefaultRegistryPort         = 5050
 
 	//tags, versions, repos
-	DefaultEVETag               = "0.0.0-master-85e61f8e" // DefaultEVETag tag for EVE image
-	DefaultAdamTag              = "0.0.39"
+	DefaultEVETag               = "0.0.0-master-c4f183d7" // DefaultEVETag tag for EVE image
+	DefaultAdamTag              = "custom-blob"
 	DefaultRedisTag             = "7"
 	DefaultRegistryTag          = "2.7"
 	DefaultProcTag              = "83cfe07"
 	DefaultImage                = "library/alpine"
-	DefaultAdamContainerRef     = "lfedge/adam"
+	DefaultAdamContainerRef     = "giggsoff/adam"
 	DefaultRedisContainerRef    = "redis"
 	DefaultRegistryContainerRef = "library/registry"
 	DefaultProcContainerRef     = "lfedge/eden-processing"

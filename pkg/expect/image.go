@@ -66,6 +66,8 @@ func (exp *AppExpectation) imageFormatEnum() config.Format {
 		actual = config.Format_VMDK
 	case "vhdx":
 		actual = config.Format_VHDX
+	case "blob":
+		actual = config.Format_AppCustomBlob
 	default:
 		actual = defaultFormat
 	}

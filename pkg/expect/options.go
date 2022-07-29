@@ -29,6 +29,9 @@ var VolumeRaw VolumeType = "raw"
 //VolumeOCI use empty oci image for volumes
 var VolumeOCI VolumeType = "oci"
 
+//VolumeBlob use blob volume
+var VolumeBlob VolumeType = "blob"
+
 //VolumeNone use no volumes
 var VolumeNone VolumeType = "none"
 
@@ -49,6 +52,8 @@ func VolumeTypeByName(name string) VolumeType {
 		return VolumeOCI
 	case "none":
 		return VolumeNone
+	case "blob":
+		return VolumeBlob
 	}
 	return VolumeQcow2
 }

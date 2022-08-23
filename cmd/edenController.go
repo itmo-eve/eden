@@ -26,7 +26,6 @@ import (
 var (
 	controllerMode      string
 	baseOSImageActivate bool
-	baseOSVDrive        bool
 	configItems         map[string]string
 	deviceItems         map[string]string
 	baseOSVersion       string
@@ -172,7 +171,7 @@ var edgeNodeEVEImageUpdate = &cobra.Command{
 		if len(qemuPorts) == 0 {
 			qemuPorts = nil
 		}
-		baseOSImageConfig := expectation.BaseOSImage(baseOSVersion, baseOSVDrive)
+		baseOSImageConfig := expectation.BaseOSImage(baseOSVersion)
 		dev.SetBaseOSConfig(append(dev.GetBaseOSConfigs(), baseOSImageConfig.Uuidandversion.Uuid))
 		if err = changer.setControllerAndDev(ctrl, dev); err != nil {
 			log.Fatalf("setControllerAndDev: %s", err)
@@ -597,7 +596,6 @@ func controllerInit() {
 	edgeNodeEVEImageUpdate.Flags().StringVarP(&baseOSVersion, "os-version", "", "", "version of ROOTFS")
 	edgeNodeEVEImageUpdate.Flags().StringVar(&registry, "registry", "remote", "Select registry to use for containers (remote/local)")
 	edgeNodeEVEImageUpdate.Flags().BoolVarP(&baseOSImageActivate, "activate", "", true, "activate image")
-	edgeNodeEVEImageUpdate.Flags().BoolVar(&baseOSVDrive, "drive", false, "provide drive to baseOS")
 	edgeNodeEVEImageRemove.Flags().StringVarP(&baseOSVersion, "os-version", "", "", "version of ROOTFS")
 	edgeNodeEVEImageRemove.Flags().StringVar(&registry, "registry", "remote", "Select registry to use for containers (remote/local)")
 	edgeNodeUpdateFlags := edgeNodeUpdate.Flags()

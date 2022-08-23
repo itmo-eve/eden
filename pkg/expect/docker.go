@@ -16,26 +16,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//createImageDocker creates Image for docker with tag and version from AppExpectation and provided id and datastoreId
-func (exp *AppExpectation) createImageDocker(id uuid.UUID, dsID string) *config.Image {
+//createContentTreeDocker creates ContentTree for docker with tag and version from AppExpectation and provided id and datastoreId
+func (exp *AppExpectation) createContentTreeDocker(id uuid.UUID, dsID string) *config.ContentTree {
 	ref, err := name.ParseReference(exp.appURL)
 	if err != nil {
 		return nil
 	}
-	return &config.Image{
-		Uuidandversion: &config.UUIDandVersion{
-			Uuid:    id.String(),
-			Version: "1",
-		},
-		Name:    fmt.Sprintf("%s:%s", ref.Context().RepositoryStr(), exp.appVersion),
-		Iformat: exp.imageFormatEnum(),
-		DsId:    dsID,
+	url := fmt.Sprintf("%s:%s", ref.Context().RepositoryStr(), exp.appVersion)
+	return &config.ContentTree{
+		Uuid:        id.String(),
+		URL:         url,
+		DisplayName: url,
+		Iformat:     exp.imageFormatEnum(),
+		DsId:        dsID,
 	}
 }
 
-//checkImageDocker checks if provided img match expectation
-func (exp *AppExpectation) checkImageDocker(img *config.Image, dsID string) bool {
-	if img.DsId == dsID && img.Name == fmt.Sprintf("%s:%s", exp.appURL, exp.appVersion) && img.Iformat == config.Format_CONTAINER {
+//checkContentTreeDocker checks if provided img match expectation
+func (exp *AppExpectation) checkContentTreeDocker(ct *config.ContentTree, dsID string) bool {
+	if ct.DsId == dsID && ct.URL == fmt.Sprintf("%s:%s", exp.appURL, exp.appVersion) && ct.Iformat == config.Format_CONTAINER {
 		return true
 	}
 	return false
@@ -85,12 +84,12 @@ func (exp *AppExpectation) createDataStoreDocker(id uuid.UUID) *config.Datastore
 }
 
 //applyRootFSType try to parse manifest to get Annotations provided in https://github.com/lf-edge/edge-containers/blob/master/docs/annotations.md
-func (exp *AppExpectation) applyRootFSType(image *config.Image) error {
+func (exp *AppExpectation) applyRootFSType(contentTree *config.ContentTree) error {
 	if exp.appLink == defaults.DefaultDummyExpect {
 		log.Debug("skip applyRootFSType")
 		return nil
 	}
-	ref := fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(false), image.Name)
+	ref := fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(false), contentTree.DisplayName)
 	manifest, err := crane.Manifest(ref)
 	if err != nil {
 		return err
@@ -106,19 +105,19 @@ func (exp *AppExpectation) applyRootFSType(image *config.Image) error {
 		if mediaType, ok := el.Annotations[registry.AnnotationMediaType]; ok {
 			switch mediaType {
 			case registry.MimeTypeECIDiskRaw:
-				image.Iformat = config.Format_RAW
+				contentTree.Iformat = config.Format_RAW
 			case registry.MimeTypeECIDiskQcow:
-				image.Iformat = config.Format_QCOW
+				contentTree.Iformat = config.Format_QCOW
 			case registry.MimeTypeECIDiskQcow2:
-				image.Iformat = config.Format_QCOW2
+				contentTree.Iformat = config.Format_QCOW2
 			case registry.MimeTypeECIDiskVhd:
-				image.Iformat = config.Format_VHD
+				contentTree.Iformat = config.Format_VHD
 			case registry.MimeTypeECIDiskVmdk:
-				image.Iformat = config.Format_VMDK
+				contentTree.Iformat = config.Format_VMDK
 			case registry.MimeTypeECIDiskOva:
-				image.Iformat = config.Format_OVA
+				contentTree.Iformat = config.Format_OVA
 			case registry.MimeTypeECIDiskVhdx:
-				image.Iformat = config.Format_VHDX
+				contentTree.Iformat = config.Format_VHDX
 			}
 		}
 	}
@@ -126,15 +125,15 @@ func (exp *AppExpectation) applyRootFSType(image *config.Image) error {
 }
 
 //obtainVolumeInfo try to parse docker manifest of defined image and return array of mount points
-func (exp *AppExpectation) obtainVolumeInfo(image *config.Image) ([]string, error) {
+func (exp *AppExpectation) obtainVolumeInfo(contentTree *config.ContentTree) ([]string, error) {
 	if exp.appLink == defaults.DefaultDummyExpect {
 		log.Debug("skip obtainVolumeInfo")
 		return nil, nil
 	}
-	ref := fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(false), image.Name)
+	ref := fmt.Sprintf("%s/%s", exp.getDataStoreFQDN(false), contentTree.DisplayName)
 	cfg, err := crane.Config(ref)
 	if err != nil {
-		return nil, fmt.Errorf("error getting config %s: %v", image.Name, err)
+		return nil, fmt.Errorf("error getting config %s: %v", contentTree.DisplayName, err)
 	}
 	// parse the config file
 	configFile, err := v1.ParseConfigFile(bytes.NewReader(cfg))
@@ -152,8 +151,8 @@ func (exp *AppExpectation) obtainVolumeInfo(image *config.Image) ([]string, erro
 	return mountPoints, nil
 }
 
-//prepareImage generates new image for mountable volume
-func (exp *AppExpectation) prepareImage() *config.Image {
+//prepareContentTree generates new image for mountable volume
+func (exp *AppExpectation) prepareContentTree() *config.ContentTree {
 	appLink := defaults.DefaultEmptyVolumeLinkQcow2
 	switch exp.volumesType {
 	case VolumeQcow2:
@@ -177,20 +176,20 @@ func (exp *AppExpectation) prepareImage() *config.Image {
 	}
 	tempExp := AppExpectationFromURL(exp.ctrl, exp.device, appLink, "")
 	tempExp.imageFormat = string(exp.volumesType)
-	return tempExp.Image()
+	return tempExp.ContentTree()
 }
 
 //createAppInstanceConfigDocker creates appBundle for docker with provided img, netInstance, id and acls
 //  it uses name of app and cpu/mem params from AppExpectation
-func (exp *AppExpectation) createAppInstanceConfigDocker(img *config.Image, id uuid.UUID) *appBundle {
+func (exp *AppExpectation) createAppInstanceConfigDocker(contentTree *config.ContentTree, id uuid.UUID) *appBundle {
 	log.Debugf("Try to obtain info about volumes, please wait")
-	mountPointsList, err := exp.obtainVolumeInfo(img)
+	mountPointsList, err := exp.obtainVolumeInfo(contentTree)
 	if err != nil {
 		//if something wrong with info about image, just print information
 		log.Errorf("cannot obtain info about volumes: %v", err)
 	}
 	log.Debugf("Try to obtain info about disks, please wait")
-	if err := exp.applyRootFSType(img); err != nil {
+	if err := exp.applyRootFSType(contentTree); err != nil {
 		//if something wrong with info about disks, just print information
 		log.Errorf("cannot obtain info about disks: %v", err)
 	}
@@ -212,40 +211,28 @@ func (exp *AppExpectation) createAppInstanceConfigDocker(img *config.Image, id u
 	if exp.diskSize > 0 {
 		maxSizeBytes = exp.diskSize
 	}
-	drive := &config.Drive{
-		Image:        img,
-		Maxsizebytes: maxSizeBytes,
-	}
-	app.Drives = []*config.Drive{drive}
-	contentTree := exp.imageToContentTree(img, img.Name)
 	contentTrees := []*config.ContentTree{contentTree}
-	volume := exp.driveToVolume(drive, 0, contentTree)
+	volume := exp.contentTreeToVolume(maxSizeBytes, 0, contentTree)
 	volumes := []*config.Volume{volume}
 	app.VolumeRefList = []*config.VolumeRef{{MountDir: "/", Uuid: volume.Uuid}}
 
 	if len(mountPointsList) > 0 {
 		// we need to add volumes for every mount point
-		image := exp.prepareImage()
+		innerContentTree := exp.prepareContentTree()
 		for ind, el := range mountPointsList {
-			if image != nil {
-				drive := &config.Drive{
-					Image:        image,
-					Maxsizebytes: exp.volumeSize,
-				}
+			if innerContentTree != nil {
 				toAppend := true
-				var contentTree *config.ContentTree
 				for _, ct := range contentTrees {
-					if ct.URL == image.Name && ct.Sha256 == image.Sha256 {
+					if ct.URL == innerContentTree.DisplayName && ct.Sha256 == innerContentTree.Sha256 {
 						//skip append of existent ContentTree
 						toAppend = false
-						contentTree = ct
+						innerContentTree = ct
 					}
 				}
 				if toAppend {
-					contentTree = exp.imageToContentTree(image, fmt.Sprintf("%s-%d", exp.appName, ind))
-					contentTrees = append(contentTrees, contentTree)
+					contentTrees = append(contentTrees, innerContentTree)
 				}
-				volume := exp.driveToVolume(drive, ind+1, contentTree)
+				volume := exp.contentTreeToVolume(exp.volumeSize, ind+1, innerContentTree)
 				volumes = append(volumes, volume)
 				app.VolumeRefList = append(app.VolumeRefList, &config.VolumeRef{MountDir: el, Uuid: volume.Uuid})
 			}

@@ -32,7 +32,7 @@ func (exp *AppExpectation) checkAppInstanceConfig(app *config.AppInstanceConfig)
 
 //createAppInstanceConfig creates AppInstanceConfig with provided img and netInstances
 //  it uses published ports info from AppExpectation to create ACE
-func (exp *AppExpectation) createAppInstanceConfig(img *config.Image, netInstances map[*NetInstanceExpectation]*config.NetworkInstanceConfig) (*appBundle, error) {
+func (exp *AppExpectation) createAppInstanceConfig(contentTree *config.ContentTree, netInstances map[*NetInstanceExpectation]*config.NetworkInstanceConfig) (*appBundle, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
@@ -40,9 +40,9 @@ func (exp *AppExpectation) createAppInstanceConfig(img *config.Image, netInstanc
 	var bundle *appBundle
 	switch exp.appType {
 	case dockerApp, directoryApp:
-		bundle = exp.createAppInstanceConfigDocker(img, id)
+		bundle = exp.createAppInstanceConfigDocker(contentTree, id)
 	case httpApp, httpsApp, fileApp:
-		bundle = exp.createAppInstanceConfigVM(img, id)
+		bundle = exp.createAppInstanceConfigVM(contentTree, id)
 	default:
 		return nil, fmt.Errorf("not supported appType")
 	}
@@ -81,27 +81,21 @@ func (exp *AppExpectation) createAppInstanceConfig(img *config.Image, netInstanc
 			//we should not overwrite type for docker
 			tempExp.imageFormat = string(exp.volumesType)
 		}
-		image := tempExp.Image()
-		if image != nil {
-			drive := &config.Drive{
-				Image:        image,
-				Maxsizebytes: exp.volumeSize,
-			}
+		innerContentTree := tempExp.ContentTree()
+		if innerContentTree != nil {
 			ind := len(bundle.volumes)
 			toAppend := true
-			var contentTree *config.ContentTree
 			for _, ct := range bundle.contentTrees {
-				if ct.URL == image.Name && ct.Sha256 == image.Sha256 {
+				if ct.URL == innerContentTree.DisplayName && ct.Sha256 == innerContentTree.Sha256 {
 					//skip append of existent ContentTree
 					toAppend = false
-					contentTree = ct
+					innerContentTree = ct
 				}
 			}
 			if toAppend {
-				contentTree = exp.imageToContentTree(image, fmt.Sprintf("%s-%d", exp.appName, ind))
-				bundle.contentTrees = append(bundle.contentTrees, contentTree)
+				bundle.contentTrees = append(bundle.contentTrees, innerContentTree)
 			}
-			volume := exp.driveToVolume(drive, ind, contentTree)
+			volume := exp.contentTreeToVolume(exp.volumeSize, ind, innerContentTree)
 			bundle.volumes = append(bundle.volumes, volume)
 			bundle.appInstanceConfig.VolumeRefList = append(bundle.appInstanceConfig.VolumeRefList, &config.VolumeRef{Uuid: volume.Uuid, MountDir: mountPoint})
 		}
@@ -147,10 +141,10 @@ func (exp *AppExpectation) createAppInstanceConfig(img *config.Image, netInstanc
 	return bundle, nil
 }
 
-//Application expectation gets or creates Image definition, gets or create NetworkInstance definition,
+//Application expectation gets or creates ContentTree definition, gets or create NetworkInstance definition,
 //gets AppInstanceConfig and returns it or creates AppInstanceConfig, adds it into internal controller and returns it
 func (exp *AppExpectation) Application() *config.AppInstanceConfig {
-	image := exp.Image()
+	contentTree := exp.ContentTree()
 	networkInstances := exp.NetworkInstances()
 	for _, appID := range exp.device.GetApplicationInstances() {
 		app, err := exp.ctrl.GetApplicationInstanceConfig(appID)
@@ -161,7 +155,7 @@ func (exp *AppExpectation) Application() *config.AppInstanceConfig {
 			return app
 		}
 	}
-	bundle, err := exp.createAppInstanceConfig(image, networkInstances)
+	bundle, err := exp.createAppInstanceConfig(contentTree, networkInstances)
 	if err != nil {
 		log.Fatalf("cannot create app: %s", err)
 	}

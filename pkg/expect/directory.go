@@ -10,27 +10,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//createImageFile uploads image into local registry from directory
-func (exp *AppExpectation) createImageDirectory(id uuid.UUID, dsID string) *config.Image {
+//createContentTreeFile uploads image into local registry from directory
+func (exp *AppExpectation) createContentTreeDirectory(id uuid.UUID, dsID string) *config.ContentTree {
 	hash, err := utils.SHA256SUMAll(exp.appURL)
 	if err != nil {
-		log.Fatalf("createImageDirectory SHA256SUMAll: %v", err)
+		log.Fatalf("createContentTreeDirectory SHA256SUMAll: %v", err)
 	}
 	tag := fmt.Sprintf("eden/%s:%s", filepath.Base(exp.appURL), hash)
 	if err := utils.CreateImage(exp.appURL, tag, exp.ctrl.GetVars().ZArch); err != nil {
-		log.Fatalf("createImageDirectory CreateImage: %v", err)
+		log.Fatalf("createContentTreeDirectory CreateImage: %v", err)
 	}
 	if _, err := utils.LoadRegistry(tag, fmt.Sprintf("%s:%s", exp.ctrl.GetVars().RegistryIP, exp.ctrl.GetVars().RegistryPort)); err != nil {
-		log.Fatalf("createImageDirectory LoadRegistry: %s", err)
+		log.Fatalf("createContentTreeDirectory LoadRegistry: %s", err)
 	}
-	return &config.Image{
-		Uuidandversion: &config.UUIDandVersion{
-			Uuid:    id.String(),
-			Version: "1",
-		},
-		Name:    tag,
-		Iformat: config.Format_CONTAINER,
-		DsId:    dsID,
+	return &config.ContentTree{
+		Uuid:        id.String(),
+		DisplayName: tag,
+		URL:         tag,
+		Iformat:     config.Format_CONTAINER,
+		DsId:        dsID,
 	}
 }
 

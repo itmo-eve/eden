@@ -16,8 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//createImageHTTP downloads image into EServer directory from http/https endpoint and calculates size and sha256 of image
-func (exp *AppExpectation) createImageHTTP(id uuid.UUID, dsID string) *config.Image {
+//createContentTreeHTTP downloads image into EServer directory from http/https endpoint and calculates size and sha256 of image
+func (exp *AppExpectation) createContentTreeHTTP(id uuid.UUID, dsID string) *config.ContentTree {
 	log.Infof("Starting download of image from %s", exp.appLink)
 	server := &eden.EServer{
 		EServerIP:   exp.ctrl.GetVars().EServerIP,
@@ -43,7 +43,7 @@ func (exp *AppExpectation) createImageHTTP(id uuid.UUID, dsID string) *config.Im
 				sha256 = status.Sha256
 				fileSize = status.Size
 				filePath = status.FileName
-				log.Infof("Image downloaded with size %s and sha256 %s", humanize.Bytes(uint64(status.Size)), sha256)
+				log.Infof("ContentTree downloaded with size %s and sha256 %s", humanize.Bytes(uint64(status.Size)), sha256)
 				break
 			}
 			time.Sleep(delayTime)
@@ -61,22 +61,20 @@ func (exp *AppExpectation) createImageHTTP(id uuid.UUID, dsID string) *config.Im
 		}
 		filePath = strings.TrimLeft(u.RequestURI(), "/")
 	}
-	return &config.Image{
-		Uuidandversion: &config.UUIDandVersion{
-			Uuid:    id.String(),
-			Version: "1",
-		},
-		Name:      filePath,
-		Iformat:   exp.imageFormatEnum(),
-		DsId:      dsID,
-		SizeBytes: fileSize,
-		Sha256:    sha256,
+	return &config.ContentTree{
+		Uuid:         id.String(),
+		DisplayName:  filePath,
+		URL:          filePath,
+		Iformat:      exp.imageFormatEnum(),
+		DsId:         dsID,
+		MaxSizeBytes: uint64(fileSize),
+		Sha256:       sha256,
 	}
 }
 
-//checkImageHTTP checks if provided img match expectation
-func (exp *AppExpectation) checkImageHTTP(img *config.Image, dsID string) bool {
-	if img.DsId == dsID && img.Name == path.Join("eserver", path.Base(exp.appURL)) && img.Iformat == config.Format_QCOW2 {
+//checkContentTreeHTTP checks if provided img match expectation
+func (exp *AppExpectation) checkContentTreeHTTP(ct *config.ContentTree, dsID string) bool {
+	if ct.DsId == dsID && ct.URL == path.Join("eserver", path.Base(exp.appURL)) && ct.Iformat == config.Format_QCOW2 {
 		return true
 	}
 	return false

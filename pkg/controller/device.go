@@ -99,9 +99,6 @@ func (cloud *CloudCtx) ConfigParse(config *config.EdgeDevConfig) (*device.Ctx, e
 	var baseOSs []string
 	for _, el := range config.Base {
 		_ = cloud.AddBaseOsConfig(el)
-		for _, img := range el.Drives {
-			_ = cloud.AddImage(img.Image)
-		}
 		id, err := getUUID(el)
 		if err != nil {
 			return nil, err
@@ -175,9 +172,6 @@ func (cloud *CloudCtx) ConfigParse(config *config.EdgeDevConfig) (*device.Ctx, e
 	var appInstances []string
 	for _, el := range config.Apps {
 		_ = cloud.AddApplicationInstanceConfig(el)
-		for _, img := range el.Drives {
-			_ = cloud.AddImage(img.Image)
-		}
 		id, err := getUUID(el)
 		if err != nil {
 			return nil, err
@@ -427,21 +421,6 @@ func (cloud *CloudCtx) checkContentTreeDs(contentTree *config.ContentTree, dataS
 	return dataStores, nil
 }
 
-//checkDriveDs checks dataStores and adds one from drive if needed
-func (cloud *CloudCtx) checkDriveDs(drive *config.Drive, dataStores []*config.DatastoreConfig) (result []*config.DatastoreConfig, err error) {
-	if drive.Image == nil {
-		return nil, errors.New("empty Image in Drive")
-	}
-	dataStore, err := cloud.GetDataStore(drive.Image.DsId)
-	if err != nil {
-		return nil, err
-	}
-	if !checkIfDatastoresContains(dataStore.Id, dataStores) {
-		return append(dataStores, dataStore), nil
-	}
-	return dataStores, nil
-}
-
 // GetConfigBytes generate json representation of device config
 //nolint:cyclop,maintidx
 func (cloud *CloudCtx) GetConfigBytes(dev *device.Ctx, pretty bool) ([]byte, error) {
@@ -454,14 +433,6 @@ baseOSLoop:
 		baseOSConfig, err := cloud.GetBaseOSConfig(baseOSConfigID)
 		if err != nil {
 			return nil, err
-		}
-
-		//check drives from baseOSConfigs
-		for _, drive := range baseOSConfig.Drives {
-			dataStores, err = cloud.checkDriveDs(drive, dataStores)
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		baseOS = append(baseOS, baseOSConfig)
@@ -530,12 +501,6 @@ volumeLoop:
 		applicationInstance, err := cloud.GetApplicationInstanceConfig(applicationInstanceConfigID)
 		if err != nil {
 			return nil, err
-		}
-		for _, drive := range applicationInstance.Drives {
-			dataStores, err = cloud.checkDriveDs(drive, dataStores)
-			if err != nil {
-				return nil, err
-			}
 		}
 		networkInstanceConfigArray := dev.GetNetworkInstances()
 		//check network instances from apps

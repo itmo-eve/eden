@@ -7,8 +7,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//driveToVolume converts information about drive, its number and content tree into volume representation
-func (exp *AppExpectation) driveToVolume(dr *config.Drive, numberOfDrive int, contentTree *config.ContentTree) *config.Volume {
+//contentTreeToVolume converts information about drive, its number and content tree into volume representation
+func (exp *AppExpectation) contentTreeToVolume(maxsizebytes int64, numberOfDrive int, contentTree *config.ContentTree) *config.Volume {
 	for _, volID := range exp.device.GetVolumes() {
 		el, err := exp.ctrl.GetVolume(volID)
 		if err != nil {
@@ -30,7 +30,7 @@ func (exp *AppExpectation) driveToVolume(dr *config.Drive, numberOfDrive int, co
 			DownloadContentTreeID: contentTree.Uuid,
 		},
 		Protocols:    nil,
-		Maxsizebytes: dr.Maxsizebytes,
+		Maxsizebytes: maxsizebytes,
 		DisplayName:  fmt.Sprintf("%s_%d_m_0", exp.appName, numberOfDrive),
 	}
 	_ = exp.ctrl.AddVolume(volume)
@@ -39,20 +39,15 @@ func (exp *AppExpectation) driveToVolume(dr *config.Drive, numberOfDrive int, co
 
 //Volume generates volume for provided expectation
 func (exp *AppExpectation) Volume() *config.Volume {
-	img := exp.Image()
+	contentTree := exp.ContentTree()
 
 	maxSizeBytes := int64(0)
 	if exp.diskSize > 0 {
 		maxSizeBytes = exp.diskSize
 	}
-	drive := &config.Drive{
-		Image:        img,
-		Maxsizebytes: maxSizeBytes,
-	}
-	contentTree := exp.imageToContentTree(img, img.Name)
 	_ = exp.ctrl.AddContentTree(contentTree)
 	exp.device.SetContentTreeConfig(append(exp.device.GetContentTrees(), contentTree.Uuid))
-	volume := exp.driveToVolume(drive, 0, contentTree)
+	volume := exp.contentTreeToVolume(maxSizeBytes, 0, contentTree)
 	volume.DisplayName = exp.appName
 	_ = exp.ctrl.AddVolume(volume)
 	exp.device.SetVolumeConfigs(append(exp.device.GetVolumes(), volume.Uuid))

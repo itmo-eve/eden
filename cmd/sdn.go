@@ -11,7 +11,7 @@ import (
 	"github.com/lf-edge/eden/pkg/defaults"
 	"github.com/lf-edge/eden/pkg/edensdn"
 	"github.com/lf-edge/eden/pkg/utils"
-	sdnapi "github.com/lf-edge/eden/sdn/api"
+	sdnapi "github.com/lf-edge/eden/sdn/vm/api"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -566,7 +566,7 @@ func sdnForwardSCPFromEve(remoteFilePath, localFilePath string) {
 }
 
 func sdnSSHKeyPath() string {
-	return filepath.Join(sdnSourceDir, "cert/ssh/id_rsa")
+	return filepath.Join(sdnSourceDir, "vm/cert/ssh/id_rsa")
 }
 
 // Run after loading these options from config:

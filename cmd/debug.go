@@ -53,20 +53,8 @@ var debugStartEveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(eveSSHKey); !os.IsNotExist(err) {
 			commandToRun := fmt.Sprintf("perf record %s -o %s", perfOptions, perfLocation)
-			if eveRemote {
-				eveIP := getEVEIP("eth0")
-				if eveIP == "" {
-					log.Fatal("Np EVE IP")
-				}
-				arguments := fmt.Sprintf("-o ConnectTimeout=5 -oStrictHostKeyChecking=no -i %s -p %d root@%s %s",
-					eveSSHKey, eveSSHPort, eveIP, commandToRun)
-				log.Debugf("Try to ssh %s:%d with key %s and command %s", eveHost, eveSSHPort, eveSSHKey, arguments)
-				if _, err := utils.RunCommandBackground("ssh", nil, strings.Fields(arguments)...); err != nil {
-					log.Fatalf("ssh error for command %s: %s", commandToRun, err)
-				}
-			} else {
-				sdnForwardSSHToEve(commandToRun)
-			}
+			commandToRun = fmt.Sprintf("sh -c 'nohup %s > /dev/null 2>&1 &'", commandToRun)
+			sdnForwardSSHToEve(commandToRun)
 		} else {
 			log.Fatalf("SSH key problem: %s", err)
 		}
@@ -79,21 +67,8 @@ var debugStopEveCmd = &cobra.Command{
 	PreRunE: initSSHVariables,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := os.Stat(eveSSHKey); !os.IsNotExist(err) {
-			commandToRun := "killall perf"
-			if eveRemote {
-				eveIP := getEVEIP("eth0")
-				if eveIP == "" {
-					log.Fatal("Np EVE IP")
-				}
-				arguments := fmt.Sprintf("-o ConnectTimeout=5 -oStrictHostKeyChecking=no -i %s -p %d root@%s %s",
-					eveSSHKey, eveSSHPort, eveIP, commandToRun)
-				log.Debugf("Try to ssh %s:%d with key %s and command %s", eveHost, eveSSHPort, eveSSHKey, arguments)
-				if err := utils.RunCommandForeground("ssh", strings.Fields(arguments)...); err != nil {
-					log.Fatalf("ssh error for command %s: %s", commandToRun, err)
-				}
-			} else {
-				sdnForwardSSHToEve(commandToRun)
-			}
+			commandToRun := "killall -SIGINT perf"
+			sdnForwardSSHToEve(commandToRun)
 		} else {
 			log.Fatalf("SSH key problem: %s", err)
 		}
@@ -113,28 +88,8 @@ var debugSaveEveCmd = &cobra.Command{
 		tmpFile := fmt.Sprintf("%s.tmp", absPath)
 		if _, err := os.Stat(eveSSHKey); !os.IsNotExist(err) {
 			commandToRun := fmt.Sprintf("perf script -i %s > %s", perfLocation, defaults.DefaultPerfScriptEVELocation)
-			if eveRemote {
-				eveIP := getEVEIP("eth0")
-				if eveIP == "" {
-					log.Fatal("Np EVE IP")
-				}
-				arguments := fmt.Sprintf("-o ConnectTimeout=5 -oStrictHostKeyChecking=no -i %s -p %d root@%s %s",
-					eveSSHKey, eveSSHPort, eveIP, commandToRun)
-				log.Debugf("Try to ssh %s:%d with key %s and command %s", eveHost, eveSSHPort, eveSSHKey, arguments)
-				if err := utils.RunCommandForeground("ssh", strings.Fields(arguments)...); err != nil {
-					log.Fatalf("ssh error for command %s: %s", commandToRun, err)
-				}
-				commandToRun = fmt.Sprintf("%s %s", defaults.DefaultPerfScriptEVELocation, tmpFile)
-				arguments = fmt.Sprintf("-o ConnectTimeout=5 -oStrictHostKeyChecking=no -i %s -P %d root@%s:%s",
-					eveSSHKey, eveSSHPort, eveIP, commandToRun)
-				log.Debugf("Try to scp %s:%d with key %s and command %s", eveHost, eveSSHPort, eveSSHKey, arguments)
-				if err := utils.RunCommandForeground("scp", strings.Fields(arguments)...); err != nil {
-					log.Fatalf("scp error for command %s: %s", commandToRun, err)
-				}
-			} else {
-				sdnForwardSSHToEve(commandToRun)
-				sdnForwardSCPFromEve(defaults.DefaultPerfScriptEVELocation, tmpFile)
-			}
+			sdnForwardSSHToEve(commandToRun)
+			sdnForwardSCPFromEve(defaults.DefaultPerfScriptEVELocation, tmpFile)
 			image := fmt.Sprintf("%s:%s", defaults.DefaultProcContainerRef, defaults.DefaultProcTag)
 			commandToRun = fmt.Sprintf("-i /in/%s -o /out/%s svg", filepath.Base(tmpFile), filepath.Base(absPath))
 			volumeMap := map[string]string{"/in": filepath.Dir(tmpFile), "/out": filepath.Dir(absPath)}
@@ -166,28 +121,8 @@ var debugHardwareEveCmd = &cobra.Command{
 				commandToRun = "lshw -short"
 			}
 			commandToRun += ">" + hwLocation
-			if eveRemote {
-				eveIP := getEVEIP("eth0")
-				if eveIP == "" {
-					log.Fatal("Np EVE IP")
-				}
-				arguments := fmt.Sprintf("-o ConnectTimeout=5 -oStrictHostKeyChecking=no -i %s -p %d root@%s %s",
-					eveSSHKey, eveSSHPort, eveIP, commandToRun)
-				log.Debugf("Try to scp %s:%d with key %s and command %s", eveHost, eveSSHPort, eveSSHKey, arguments)
-				if err := utils.RunCommandForeground("ssh", strings.Fields(arguments)...); err != nil {
-					log.Fatalf("ssh error for command %s: %s", arguments, err)
-				}
-				commandToRun = fmt.Sprintf("%s %s", hwLocation, absPath)
-				arguments = fmt.Sprintf("-o ConnectTimeout=5 -oStrictHostKeyChecking=no -i %s -P %d root@%s:%s",
-					eveSSHKey, eveSSHPort, eveIP, commandToRun)
-				log.Debugf("Try to scp %s:%d with key %s and command %s", eveHost, eveSSHPort, eveSSHKey, arguments)
-				if err := utils.RunCommandForeground("scp", strings.Fields(arguments)...); err != nil {
-					log.Fatalf("scp error for command %s: %s", commandToRun, err)
-				}
-			} else {
-				sdnForwardSSHToEve(commandToRun)
-				sdnForwardSCPFromEve(hwLocation, absPath)
-			}
+			sdnForwardSSHToEve(commandToRun)
+			sdnForwardSCPFromEve(hwLocation, absPath)
 			log.Infof("Please see output inside %s", absPath)
 		} else {
 			log.Fatalf("SSH key problem: %s", err)

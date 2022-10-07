@@ -549,6 +549,8 @@ func sdnForwardCmd(fromEp string, eveIfName string, targetPort int, cmd string, 
 	}
 	err = utils.RunCommandForeground(cmd, args...)
 	if err != nil {
+		// deferred functions not called in case of log.Fatalf
+		closeTunnel()
 		log.Fatalf("Command %s %s failed: %v", cmd, strings.Join(args, " "), err)
 	}
 }

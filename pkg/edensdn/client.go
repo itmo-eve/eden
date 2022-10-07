@@ -8,9 +8,12 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/lf-edge/eden/pkg/utils"
@@ -97,8 +100,8 @@ func (client *SdnClient) ApplyNetworkModel(netModel model.NetworkModel) (err err
 		} else {
 			response = fmt.Sprintf("failed to read response: %v", err)
 		}
-		err = fmt.Errorf("request to PUT network model failed with code=%d, " +
-			"response: %s",	resp.StatusCode, response)
+		err = fmt.Errorf("request to PUT network model failed with code=%d, "+
+			"response: %s", resp.StatusCode, response)
 		return
 	}
 	return
@@ -210,7 +213,7 @@ func (client *SdnClient) SSHPortForwarding(localPort, targetPort uint16,
 	tunnelReadyCh := make(chan bool, 1)
 	go func(tunnelReadyCh chan<- bool) {
 		var listenerReady, fwdReady, sshReady bool
-		fwdMsg := fmt.Sprintf("Local connections to LOCALHOST:%d " +
+		fwdMsg := fmt.Sprintf("Local connections to LOCALHOST:%d "+
 			"forwarded to remote address %s:%d", localPort, targetIP, targetPort)
 		listenMsg := fmt.Sprintf("Local forwarding listening on 127.0.0.1 port %d",
 			localPort)
@@ -228,6 +231,8 @@ func (client *SdnClient) SSHPortForwarding(localPort, targetPort uint16,
 				sshReady = true
 			}
 			if listenerReady && fwdReady && sshReady {
+				// Just an extra cushion for the tunnel to establish.
+				time.Sleep(500 * time.Millisecond)
 				tunnelReadyCh <- true
 				return
 			}
@@ -241,15 +246,22 @@ func (client *SdnClient) SSHPortForwarding(localPort, targetPort uint16,
 			_ = cmd.Wait()
 		}
 	}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
 	// Give tunnel some time to open.
 	select {
 	case <-tunnelReadyCh:
-		// Just an extra cushion for the tunnel to establish.
-		time.Sleep(500 * time.Millisecond)
 		return close, nil
 	case <-time.After(30 * time.Second):
 		close()
 		return nil, fmt.Errorf("failed to create SSH tunnel %s in time", fwdArgs)
+	case <-sigChan:
+		close()
+		return nil, fmt.Errorf("killed SSH tunnel %s", fwdArgs)
 	}
 }
 

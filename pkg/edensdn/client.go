@@ -244,6 +244,8 @@ func (client *SdnClient) SSHPortForwarding(localPort, targetPort uint16,
 			log.Errorf("failed to kill %s: %v", cmd, err)
 		} else {
 			_ = cmd.Wait()
+			// Just an extra cushion for the tunnel to release
+			time.Sleep(500 * time.Millisecond)
 		}
 	}
 	sigChan := make(chan os.Signal, 1)

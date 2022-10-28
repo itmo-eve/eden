@@ -106,7 +106,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 }
 
 // UploadFile uploads a file to Google Storage
-func (g GCPClient) UploadFile(src, dst, bucketName string, public bool) error {
+func (g *GCPClient) UploadFile(src, dst, bucketName string, public bool) error {
 	log.Infof("Uploading file %s to Google Storage as %s", src, dst)
 	f, err := os.Open(src)
 	if err != nil {
@@ -130,7 +130,7 @@ func (g GCPClient) UploadFile(src, dst, bucketName string, public bool) error {
 }
 
 // RemoveFile removes a file from Google Storage
-func (g GCPClient) RemoveFile(file, bucketName string) error {
+func (g *GCPClient) RemoveFile(file, bucketName string) error {
 	log.Infof("Removing of file %s from Google Storage", file)
 
 	if err := g.storage.Objects.Delete(bucketName, file).Do(); err != nil {
@@ -141,7 +141,7 @@ func (g GCPClient) RemoveFile(file, bucketName string) error {
 }
 
 // CreateImage creates a GCP image using the source from Google Storage
-func (g GCPClient) CreateImage(name, storageURL, family string, uefi, replace bool) error {
+func (g *GCPClient) CreateImage(name, storageURL, family string, uefi, replace bool) error {
 	if replace {
 		if err := g.DeleteImage(name); err != nil {
 			return err
@@ -183,7 +183,7 @@ func (g GCPClient) CreateImage(name, storageURL, family string, uefi, replace bo
 }
 
 // DeleteImage deletes and image
-func (g GCPClient) DeleteImage(name string) error {
+func (g *GCPClient) DeleteImage(name string) error {
 	var notFound bool
 	op, err := g.compute.Images.Delete(g.projectName, name).Do()
 	if err != nil {
@@ -206,7 +206,7 @@ func (g GCPClient) DeleteImage(name string) error {
 }
 
 // ListImages list all uploaded images
-func (g GCPClient) ListImages() ([]string, error) {
+func (g *GCPClient) ListImages() ([]string, error) {
 	var result []string
 	var notFound bool
 	op, err := g.compute.Images.List(g.projectName).Do()
@@ -231,7 +231,7 @@ func (g GCPClient) ListImages() ([]string, error) {
 }
 
 // CreateInstance creates and starts an instance on GCP
-func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, vtpm, replace bool) error {
+func (g *GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, vtpm, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(name, zone, true); err != nil {
 			return err
@@ -327,7 +327,7 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 			},
 		},
 	}
-	if nested {
+	if nested && !strings.HasPrefix(machineType, "t2a") {
 		// TODO(rn): We could/should check here if the image has nested virt enabled
 		instanceObj.MinCpuPlatform = "Intel Skylake"
 	}
@@ -346,7 +346,7 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 }
 
 // DeleteInstance removes an instance
-func (g GCPClient) DeleteInstance(instance, zone string, wait bool) error {
+func (g *GCPClient) DeleteInstance(instance, zone string, wait bool) error {
 	var notFound bool
 	op, err := g.compute.Instances.Delete(g.projectName, zone, instance).Do()
 	if err != nil {
@@ -370,7 +370,7 @@ func (g GCPClient) DeleteInstance(instance, zone string, wait bool) error {
 
 // GetInstanceSerialOutput streams the serial output of an instance
 // follow log if follow set to true
-func (g GCPClient) GetInstanceSerialOutput(instance, zone string, follow bool) error {
+func (g *GCPClient) GetInstanceSerialOutput(instance, zone string, follow bool) error {
 	log.Infof("Getting serial port output for instance %s", instance)
 	var next int64
 	for {
@@ -401,7 +401,7 @@ func (g GCPClient) GetInstanceSerialOutput(instance, zone string, follow bool) e
 }
 
 // ConnectToInstanceSerialPort uses SSH to connect to the serial port of the instance
-func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
+func (g *GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	log.Infof("Connecting to serial port of instance %s", instance)
 	gPubKeyURL := "https://cloud-certs.storage.googleapis.com/google-cloud-serialport-host-key.pub"
 	resp, err := http.Get(gPubKeyURL)
@@ -551,7 +551,7 @@ func (g *GCPClient) pollZoneOperationStatus(operationName, zone string) error {
 }
 
 // GetInstanceNatIP returns NatIP of an instance
-func (g GCPClient) GetInstanceNatIP(instance, zone string) (string, error) {
+func (g *GCPClient) GetInstanceNatIP(instance, zone string) (string, error) {
 	log.Debugf("Getting NatIP for instance %s", instance)
 	for i := 0; i < timeout; i++ {
 		res, err := g.compute.Instances.Get(g.projectName, zone, instance).Do()
@@ -587,7 +587,7 @@ func (g GCPClient) GetInstanceNatIP(instance, zone string) (string, error) {
 
 // SetFirewallAllowRule runs
 //gcloud compute firewall-rules create ruleName --allow all --source-ranges=sourceRanges --priority=priority
-func (g GCPClient) SetFirewallAllowRule(ruleName string, priority int64, sourceRanges []string) error {
+func (g *GCPClient) SetFirewallAllowRule(ruleName string, priority int64, sourceRanges []string) error {
 	log.Infof("setting firewall %s for %s", ruleName, sourceRanges)
 	for i := 0; i < timeout; i++ {
 		firewall := &compute.Firewall{
@@ -631,7 +631,7 @@ func (g GCPClient) SetFirewallAllowRule(ruleName string, priority int64, sourceR
 }
 
 // DeleteFirewallAllowRule runs gcloud compute firewall-rules delete ruleName
-func (g GCPClient) DeleteFirewallAllowRule(ruleName string) error {
+func (g *GCPClient) DeleteFirewallAllowRule(ruleName string) error {
 	log.Infof("deleting firewall %s", ruleName)
 	for i := 0; i < timeout; i++ {
 		operation, err := g.compute.Firewalls.Delete(g.projectName, ruleName).Do()

@@ -64,7 +64,7 @@ jobs:
           MACHINE=n1-highcpu-4
           if [ "${{ matrix.arch }}" == arm64 ]; then
             ZONE=us-central1-a
-            MACHINE=t2a-standard-2
+            MACHINE=t2a-standard-1
           fi
           echo "zone=$ZONE" >> $GITHUB_OUTPUT
           echo "machine=$MACHINE" >> $GITHUB_OUTPUT

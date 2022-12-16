@@ -7,7 +7,7 @@
 skip 'TODO: completely rewrite this test for Eden-SDN'
 
 {{$srvimage := "docker://lfedge/eden-docker-test:83cfe07"}}
-{{define "ssh"}}ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa root@{{end}}
+{{define "ssh"}}ssh -o ConnectTimeout=10 -o KeepAlive=no -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa root@{{end}}
 {{define "eclient_image"}}docker://{{EdenConfig "eden.eclient.image"}}:{{EdenConfig "eden.eclient.tag"}}{{end}}
 
 # In this test we first create two ethernet loops (pairs of eth interfaces interconnected

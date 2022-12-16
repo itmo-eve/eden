@@ -4,7 +4,7 @@
 {{define "port"}}2223{{end}}
 {{define "virtio_iface"}}enp3s0{{end}}
 {{define "passthrough_iface"}}enp4s0{{end}}
-{{define "ssh"}}ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa ubuntu@FWD_IP -p FWD_PORT{{end}}
+{{define "ssh"}}ssh -o ConnectTimeout=10 -o KeepAlive=no -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa ubuntu@FWD_IP -p FWD_PORT{{end}}
 
 [!exec:bash] stop
 [!exec:sleep] stop

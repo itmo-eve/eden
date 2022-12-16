@@ -6,7 +6,7 @@
 {{define "app_info_status_file"}}/mnt/app-info-status.json{{end}}
 {{define "app_cmd_file"}}/mnt/app-command.json{{end}}
 {{define "network"}}n1{{end}}
-{{define "ssh"}}ssh -q -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa root@FWD_IP -p FWD_PORT{{end}}
+{{define "ssh"}}ssh -q -o ConnectTimeout=10 -o KeepAlive=no -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa root@FWD_IP -p FWD_PORT{{end}}
 {{define "eclient_image"}}docker://{{EdenConfig "eden.eclient.image"}}:{{EdenConfig "eden.eclient.tag"}}{{end}}
 
 [!exec:bash] stop

@@ -1,7 +1,7 @@
 # Simple test of USB passthrough functionality after reboot of guest
 
 {{$port := "2223"}}
-{{define "ssh"}}ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa ubuntu@FWD_IP -p FWD_PORT{{end}}
+{{define "ssh"}}ssh -o ConnectTimeout=10 -o KeepAlive=no -o StrictHostKeyChecking=no -o PasswordAuthentication=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa ubuntu@FWD_IP -p FWD_PORT{{end}}
 
 [!exec:bash] stop
 [!exec:sleep] stop

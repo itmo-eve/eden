@@ -6,7 +6,7 @@
 {{define "port2"}}2224{{end}}
 {{define "mac2"}}00:01:02:03:04:02{{end}}
 {{define "ip2"}}11.12.13.12{{end}}
-{{define "ssh"}}ssh -o ConnectTimeout=10 -o StrictHostKeyChecking=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa root@FWD_IP -p FWD_PORT{{end}}
+{{define "ssh"}}ssh -o ConnectTimeout=10 -o KeepAlive=no -o StrictHostKeyChecking=no -i {{EdenConfig "eden.tests"}}/eclient/image/cert/id_rsa root@FWD_IP -p FWD_PORT{{end}}
 {{define "eclient_image"}}docker://{{EdenConfig "eden.eclient.image"}}:{{EdenConfig "eden.eclient.tag"}}{{end}}
 
 [!exec:bash] stop

@@ -99,18 +99,20 @@ func StartEVEQemu(qemuARCH, qemuOS, eveImageFile, imageFormat string, isInstalle
 		}
 	} else {
 		// Use SLIRP networking to connect QEMU VM with the host.
-		nets, err := utils.GetSubnetsNotUsed(1)
+		nets, err := utils.GetSubnetsNotUsed(2)
 		if err != nil {
 			return fmt.Errorf("StartEVEQemu: %s", err)
 		}
-		network := nets[0].Subnet
+		var network *net.IPNet
 		var ip net.IP
 		for i, port := range netModel.Ports {
 			switch i {
 			case 0:
+				network = nets[0].Subnet
 				ip = nets[0].FirstAddress
 			case 1:
-				ip = nets[0].SecondAddress
+				network = nets[1].Subnet
+				ip = nets[1].FirstAddress
 			default:
 				return fmt.Errorf("unexpected number of ports (in non-SDN mode): %d",
 					len(netModel.Ports))

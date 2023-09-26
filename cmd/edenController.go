@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newControllerCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newControllerCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var controllerMode string
 
@@ -14,7 +14,7 @@ func newControllerCmd(configName, verbosity *string) *cobra.Command {
 		Use:               "controller",
 		Short:             "interact with controller",
 		Long:              `Interact with controller.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	var edgeNode = &cobra.Command{

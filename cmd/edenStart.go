@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newStartCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newStartCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var zedControlURL, vmName, tapInterface string
 
@@ -19,7 +19,7 @@ func newStartCmd(configName, verbosity *string) *cobra.Command {
 		Use:               "start",
 		Short:             "start harness",
 		Long:              `Start harness.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := openevec.StartEden(cfg, vmName, zedControlURL, tapInterface); err != nil {
 				log.Fatalf("Start eden failed: %s", err)

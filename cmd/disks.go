@@ -9,7 +9,7 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newDisksCmd() *cobra.Command {
+func (base baseCmd) newDisksCmd() *cobra.Command {
 	var disksCmd = &cobra.Command{
 		Use:   "disks",
 		Short: `Manage disks of edge-node`,

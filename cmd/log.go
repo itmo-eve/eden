@@ -13,7 +13,7 @@ var outputFormatIds = map[types.OutputFormat][]string{
 	types.OutputFormatJSON:  {"json"},
 }
 
-func newLogCmd() *cobra.Command {
+func (base baseCmd) newLogCmd() *cobra.Command {
 	var outputFormat types.OutputFormat
 	var follow bool
 	var printFields []string

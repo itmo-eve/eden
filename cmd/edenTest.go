@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newTestCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newTestCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var tstCfg openevec.TestArgs
 
@@ -27,7 +27,7 @@ test <test_dir> -r <regexp> [-t <timewait>] [-v <level>]
 
 `,
 		Args:              cobra.MaximumNArgs(1),
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			if len(args) != 0 {
@@ -63,7 +63,7 @@ test <test_dir> -r <regexp> [-t <timewait>] [-v <level>]
 				return fmt.Errorf("Please set the --scenario option or environment variable eden.test-scenario in the EDEN configuration.")
 			}
 			tstCfg.ConfigFile = cfg.ConfigFile
-			tstCfg.Verbosity = *verbosity
+			tstCfg.Verbosity = *base.verbosity
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {

@@ -9,7 +9,7 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newVolumeCmd() *cobra.Command {
+func (base baseCmd) newVolumeCmd() *cobra.Command {
 	var volumeCmd = &cobra.Command{
 		Use: "volume",
 	}

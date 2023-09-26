@@ -11,11 +11,11 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newPodCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newPodCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var podCmd = &cobra.Command{
 		Use:               "pod",
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newStopCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newStopCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var vmName string
 	var adamRm, registryRm, redisRm, eServerRm bool
@@ -20,7 +20,7 @@ func newStopCmd(configName, verbosity *string) *cobra.Command {
 		Use:               "stop",
 		Short:             "stop harness",
 		Long:              `Stop harness.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
 			eden.StopEden(
 				adamRm, redisRm,

@@ -10,20 +10,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newAdamCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newAdamCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var adamCmd = &cobra.Command{
 		Use:               "adam",
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{
 		{
 			Message: "Basic Commands",
 			Commands: []*cobra.Command{
-				newStartAdamCmd(cfg),
-				newStopAdamCmd(),
-				newStatusAdamCmd(),
+				base.newStartAdamCmd(cfg),
+				base.newStopAdamCmd(),
+				base.newStatusAdamCmd(),
 			},
 		},
 	}
@@ -33,7 +33,7 @@ func newAdamCmd(configName, verbosity *string) *cobra.Command {
 	return adamCmd
 }
 
-func newStartAdamCmd(cfg *openevec.EdenSetupArgs) *cobra.Command {
+func (base baseCmd) newStartAdamCmd(cfg *openevec.EdenSetupArgs) *cobra.Command {
 	var startAdamCmd = &cobra.Command{
 		Use:   "start",
 		Short: "start adam",
@@ -55,7 +55,7 @@ func newStartAdamCmd(cfg *openevec.EdenSetupArgs) *cobra.Command {
 	return startAdamCmd
 }
 
-func newStopAdamCmd() *cobra.Command {
+func (base baseCmd) newStopAdamCmd() *cobra.Command {
 	var adamRm bool
 
 	var stopAdamCmd = &cobra.Command{
@@ -74,7 +74,7 @@ func newStopAdamCmd() *cobra.Command {
 	return stopAdamCmd
 }
 
-func newStatusAdamCmd() *cobra.Command {
+func (base baseCmd) newStatusAdamCmd() *cobra.Command {
 	var statusAdamCmd = &cobra.Command{
 		Use:   "status",
 		Short: "status of adam",

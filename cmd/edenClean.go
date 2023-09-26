@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newCleanCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newCleanCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var configDist, vmName string
 	var currentContext bool
@@ -20,9 +20,9 @@ func newCleanCmd(configName, verbosity *string) *cobra.Command {
 		Use:               "clean",
 		Short:             "clean harness",
 		Long:              `Clean harness.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := openevec.EdenClean(*cfg, *configName, configDist, vmName, currentContext); err != nil {
+			if err := openevec.EdenClean(*cfg, *base.configName, configDist, vmName, currentContext); err != nil {
 				log.Fatalf("Setup eden failed: %s", err)
 			}
 		},

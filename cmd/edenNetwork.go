@@ -8,7 +8,7 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newNetworkCmd() *cobra.Command {
+func (base baseCmd) newNetworkCmd() *cobra.Command {
 	var networkCmd = &cobra.Command{
 		Use: "network",
 	}

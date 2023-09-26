@@ -8,9 +8,11 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newNetworkCmd() *cobra.Command {
+func (base baseCmd) newNetworkCmd() *cobra.Command {
+	cfg := &openevec.EdenSetupArgs{}
 	var networkCmd = &cobra.Command{
-		Use: "network",
+		Use:               "network",
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

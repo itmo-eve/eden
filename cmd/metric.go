@@ -8,7 +8,7 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newMetricCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newMetricCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var outputFormat types.OutputFormat
 	var follow bool
@@ -20,7 +20,7 @@ func newMetricCmd(configName, verbosity *string) *cobra.Command {
 		Short: "Get metrics from a running EVE device",
 		Long: `
 Scans the ADAM metrics for correspondence with regular expressions requests to json fields.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := openevec.EdenMetric(cfg, outputFormat, follow, metricTail, printFields, args); err != nil {
 				log.Fatalf("Metric eden failed: %s", err)

@@ -13,11 +13,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newEveCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newEveCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var eveCmd = &cobra.Command{
 		Use:               "eve",
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 	groups := CommandGroups{
 		{

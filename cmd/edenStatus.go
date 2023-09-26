@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newStatusCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newStatusCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var allConfigs bool
 	var vmName string
@@ -19,7 +19,7 @@ func newStatusCmd(configName, verbosity *string) *cobra.Command {
 		Use:               "status",
 		Short:             "status of harness",
 		Long:              `Status of harness.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := openevec.Status(cfg, vmName, allConfigs); err != nil {
 				log.Fatal(err)

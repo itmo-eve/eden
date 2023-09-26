@@ -8,12 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newRolCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newRolCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var rolCmd = &cobra.Command{
 		Use:               "rol",
 		Short:             `Manage devices in Rack Of Labs`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	rolCmd.AddCommand(newRolRentCmd(cfg))

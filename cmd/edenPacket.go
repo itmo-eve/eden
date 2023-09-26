@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newPacketCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newPacketCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var packetProjectName string
 

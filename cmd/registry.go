@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newRegistryCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newRegistryCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var registryCmd = &cobra.Command{
 		Use:               "registry",
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

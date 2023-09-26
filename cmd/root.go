@@ -22,40 +22,45 @@ func NewEdenCommand() *cobra.Command {
 		},
 	}
 
+	baseCmd := baseCmd{
+		configName: &configName,
+		verbosity:  &verbosity,
+	}
+
 	groups := CommandGroups{
 		{
 			Message: "Basic Commands",
 			Commands: []*cobra.Command{
-				newSetupCmd(&configName, &verbosity),
-				newStartCmd(&configName, &verbosity),
-				newEveCmd(&configName, &verbosity),
-				newPodCmd(&configName, &verbosity),
-				newStatusCmd(&configName, &verbosity),
-				newStopCmd(&configName, &verbosity),
-				newCleanCmd(&configName, &verbosity),
-				newConfigCmd(&configName, &verbosity),
-				newSdnCmd(&configName, &verbosity),
+				baseCmd.newSetupCmd(),
+				baseCmd.newStartCmd(),
+				baseCmd.newEveCmd(),
+				baseCmd.newPodCmd(),
+				baseCmd.newStatusCmd(),
+				baseCmd.newStopCmd(),
+				baseCmd.newCleanCmd(),
+				baseCmd.newConfigCmd(),
+				baseCmd.newSdnCmd(),
 			},
 		},
 		{
 			Message: "Advanced Commands",
 			Commands: []*cobra.Command{
-				newInfoCmd(),
-				newLogCmd(),
-				newNetStatCmd(&configName, &verbosity),
-				newMetricCmd(&configName, &verbosity),
-				newAdamCmd(&configName, &verbosity),
-				newRegistryCmd(&configName, &verbosity),
-				newRedisCmd(&configName, &verbosity),
-				newEserverCmd(&configName, &verbosity),
-				newTestCmd(&configName, &verbosity),
-				newUtilsCmd(&configName, &verbosity),
-				newControllerCmd(&configName, &verbosity),
-				newNetworkCmd(),
-				newVolumeCmd(),
-				newDisksCmd(),
-				newPacketCmd(&configName, &verbosity),
-				newRolCmd(&configName, &verbosity),
+				baseCmd.newInfoCmd(),
+				baseCmd.newLogCmd(),
+				baseCmd.newNetStatCmd(),
+				baseCmd.newMetricCmd(),
+				baseCmd.newAdamCmd(),
+				baseCmd.newRegistryCmd(),
+				baseCmd.newRedisCmd(),
+				baseCmd.newEserverCmd(),
+				baseCmd.newTestCmd(),
+				baseCmd.newUtilsCmd(),
+				baseCmd.newControllerCmd(),
+				baseCmd.newNetworkCmd(),
+				baseCmd.newVolumeCmd(),
+				baseCmd.newDisksCmd(),
+				baseCmd.newPacketCmd(),
+				baseCmd.newRolCmd(),
 			},
 		},
 	}
@@ -68,9 +73,14 @@ func NewEdenCommand() *cobra.Command {
 	return rootCmd
 }
 
-func preRunViperLoadFunction(cfg *openevec.EdenSetupArgs, configName, verbosity *string) func(cmd *cobra.Command, args []string) error {
+type baseCmd struct {
+	configName *string
+	verbosity  *string
+}
+
+func (base baseCmd) preRunViperLoadFunction(cfg *openevec.EdenSetupArgs) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		viperCfg, err := openevec.FromViper(*configName, *verbosity)
+		viperCfg, err := openevec.FromViper(*base.configName, *base.verbosity)
 		if err != nil {
 			return err
 		}

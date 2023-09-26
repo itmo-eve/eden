@@ -8,7 +8,7 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newNetStatCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newNetStatCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var outputFormat types.OutputFormat
 	var follow bool
@@ -20,7 +20,7 @@ func newNetStatCmd(configName, verbosity *string) *cobra.Command {
 		Short: "Get logs of network packets from a running EVE device",
 		Long: `Scans the ADAM flow messages for correspondence with regular expressions to show network flow statistics
 (TCP and UDP flows with IP addresses, port numbers, counters, whether dropped or accepted)`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := openevec.EdenNetStat(cfg, outputFormat, follow, logTail, printFields, args); err != nil {
 				log.Fatalf("Setup eden failed: %s", err)

@@ -16,12 +16,12 @@ var (
 	sdnFwdFromEp string
 )
 
-func newSdnCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newSdnCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var sdnCmd = &cobra.Command{
 		Use:               "sdn",
 		Short:             "Emulate and manage networks surrounding EVE VM using Eden-SDN",
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

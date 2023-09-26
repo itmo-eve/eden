@@ -11,14 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newUtilsCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newUtilsCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 
 	var utilsCmd = &cobra.Command{
 		Use:               "utils",
 		Short:             "Eden utilities",
 		Long:              `Additional utilities for EDEN.`,
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

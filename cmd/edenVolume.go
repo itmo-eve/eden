@@ -9,9 +9,11 @@ import (
 	"github.com/thediveo/enumflag"
 )
 
-func newVolumeCmd() *cobra.Command {
+func (base baseCmd) newVolumeCmd() *cobra.Command {
+	cfg := &openevec.EdenSetupArgs{}
 	var volumeCmd = &cobra.Command{
-		Use: "volume",
+		Use:               "volume",
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

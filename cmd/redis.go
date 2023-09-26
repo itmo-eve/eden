@@ -11,11 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newRedisCmd(configName, verbosity *string) *cobra.Command {
+func (base baseCmd) newRedisCmd() *cobra.Command {
 	cfg := &openevec.EdenSetupArgs{}
 	var redisCmd = &cobra.Command{
 		Use:               "redis",
-		PersistentPreRunE: preRunViperLoadFunction(cfg, configName, verbosity),
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

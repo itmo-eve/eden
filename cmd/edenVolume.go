@@ -10,8 +10,10 @@ import (
 )
 
 func (base baseCmd) newVolumeCmd() *cobra.Command {
+	cfg := &openevec.EdenSetupArgs{}
 	var volumeCmd = &cobra.Command{
-		Use: "volume",
+		Use:               "volume",
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

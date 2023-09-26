@@ -9,15 +9,17 @@ import (
 )
 
 func (base baseCmd) newInfoCmd() *cobra.Command {
+	cfg := &openevec.EdenSetupArgs{}
 	var outputFormat types.OutputFormat
 	var infoTail uint
 	var follow bool
 	var printFields []string
 
 	var infoCmd = &cobra.Command{
-		Use:   "info [field:regexp ...]",
-		Short: "Get information reports from a running EVE device",
-		Long:  ` Scans the ADAM Info for correspondence with regular expressions requests to json fields.`,
+		Use:     "info [field:regexp ...]",
+		Short:   "Get information reports from a running EVE device",
+		Long:    ` Scans the ADAM Info for correspondence with regular expressions requests to json fields.`,
+		PreRunE: base.preRunViperLoadFunction(cfg),
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := openevec.EdenInfo(outputFormat, infoTail, follow, printFields, args); err != nil {
 				log.Fatal("Eden info failed ", err)

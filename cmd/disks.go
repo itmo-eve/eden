@@ -10,9 +10,11 @@ import (
 )
 
 func (base baseCmd) newDisksCmd() *cobra.Command {
+	cfg := &openevec.EdenSetupArgs{}
 	var disksCmd = &cobra.Command{
-		Use:   "disks",
-		Short: `Manage disks of edge-node`,
+		Use:               "disks",
+		Short:             `Manage disks of edge-node`,
+		PersistentPreRunE: base.preRunViperLoadFunction(cfg),
 	}
 
 	groups := CommandGroups{

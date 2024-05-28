@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/lf-edge/eve/libs/depgraph"
+	"github.com/lf-edge/eve-libs/depgraph"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"github.com/vishvananda/netns"

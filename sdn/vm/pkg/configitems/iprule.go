@@ -7,7 +7,7 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/lf-edge/eve/libs/depgraph"
+	"github.com/lf-edge/eve-libs/depgraph"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )

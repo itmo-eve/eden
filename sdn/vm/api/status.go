@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/lf-edge/eve/libs/depgraph"
+	"github.com/lf-edge/eve-libs/depgraph"
 )
 
 // SDNStatus : Current status of Eden SDN as reported by the SDN agent.

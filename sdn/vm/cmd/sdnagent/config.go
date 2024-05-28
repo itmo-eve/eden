@@ -10,8 +10,8 @@ import (
 
 	"github.com/lf-edge/eden/sdn/vm/api"
 	"github.com/lf-edge/eden/sdn/vm/pkg/configitems"
-	dg "github.com/lf-edge/eve/libs/depgraph"
-	"github.com/lf-edge/eve/libs/reconciler"
+	dg "github.com/lf-edge/eve-libs/depgraph"
+	"github.com/lf-edge/eve-libs/reconciler"
 	log "github.com/sirupsen/logrus"
 )
 

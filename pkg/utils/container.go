@@ -3,14 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"net"
-	"os"
-	"os/user"
-	"path/filepath"
-	"strings"
-	"time"
-
 	"github.com/docker/distribution/context"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -21,6 +13,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/lf-edge/eden/pkg/defaults"
 	log "github.com/sirupsen/logrus"
+	"io"
+	"net"
+	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 )
 
 // CreateDockerNetwork create network for docker`s containers
@@ -131,7 +129,7 @@ func CreateAndRunContainer(containerName string, imageName string, portMap map[s
 		return fmt.Errorf("ContainerCreate: %w", err)
 	}
 
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return fmt.Errorf("ContainerStart: %w", err)
 	}
 
@@ -305,7 +303,7 @@ func ExtractFromImage(imageName, localPath, containerPath string) error {
 	}
 	containerID := resp.ID
 	defer func() {
-		if err := cli.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{Force: true}); err != nil {
+		if err := cli.ContainerRemove(ctx, containerID, container.RemoveOptions{Force: true}); err != nil {
 			log.Errorf("ContainerRemove error: %s", err)
 		}
 	}()
@@ -345,7 +343,7 @@ func StopContainer(containerName string, remove bool) error {
 		return err
 	}
 
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		return err
 	}
@@ -360,19 +358,19 @@ func StopContainer(containerName string, remove bool) error {
 		if isFound {
 			if cont.State != "running" {
 				if remove {
-					if err = cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{}); err != nil {
+					if err = cli.ContainerRemove(ctx, cont.ID, container.RemoveOptions{}); err != nil {
 						return err
 					}
 				}
 				return nil
 			}
 			if remove {
-				if err = cli.ContainerRemove(ctx, cont.ID, types.ContainerRemoveOptions{Force: true}); err != nil {
+				if err = cli.ContainerRemove(ctx, cont.ID, container.RemoveOptions{Force: true}); err != nil {
 					return err
 				}
 			} else {
-				timeout := time.Duration(10) * time.Second
-				if err = cli.ContainerStop(ctx, cont.ID, &timeout); err != nil {
+				timeout := 10
+				if err = cli.ContainerStop(ctx, cont.ID, container.StopOptions{Timeout: &timeout}); err != nil {
 					return err
 				}
 			}
@@ -389,7 +387,7 @@ func StateContainer(containerName string) (state string, err error) {
 		return "", err
 	}
 
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		return "", err
 	}
@@ -416,7 +414,7 @@ func StartContainer(containerName string) error {
 		return err
 	}
 
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		return err
 	}
@@ -429,7 +427,7 @@ func StartContainer(containerName string) error {
 			}
 		}
 		if isFound {
-			if err = cli.ContainerStart(ctx, cont.ID, types.ContainerStartOptions{}); err != nil {
+			if err = cli.ContainerStart(ctx, cont.ID, container.StartOptions{}); err != nil {
 				return err
 			}
 			break
@@ -486,7 +484,7 @@ func RunDockerCommand(image string, command string, volumeMap map[string]string)
 	if err != nil {
 		return "", err
 	}
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := cli.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return "", err
 	}
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
@@ -499,14 +497,14 @@ func RunDockerCommand(image string, command string, volumeMap map[string]string)
 
 	}
 
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true})
+	out, err := cli.ContainerLogs(ctx, resp.ID, container.LogsOptions{ShowStdout: true, ShowStderr: true})
 	if err != nil {
 		return "", err
 	}
 	defer out.Close()
 	b, err := io.ReadAll(out)
 
-	if err := cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{RemoveVolumes: true}); err != nil {
+	if err := cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{RemoveVolumes: true}); err != nil {
 		log.Errorf("ContainerRemove error: %s", err)
 	}
 

@@ -12,8 +12,8 @@ import (
 
 	sdnapi "github.com/lf-edge/eden/sdn/vm/api"
 	goproxycfg "github.com/lf-edge/eden/sdn/vm/cmd/goproxy/config"
-	"github.com/lf-edge/eve/libs/depgraph"
-	"github.com/lf-edge/eve/libs/reconciler"
+	"github.com/lf-edge/eve-libs/depgraph"
+	"github.com/lf-edge/eve-libs/reconciler"
 	log "github.com/sirupsen/logrus"
 )
 

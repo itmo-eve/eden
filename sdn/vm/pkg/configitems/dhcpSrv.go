@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lf-edge/eve/libs/depgraph"
-	"github.com/lf-edge/eve/libs/reconciler"
+	"github.com/lf-edge/eve-libs/depgraph"
+	"github.com/lf-edge/eve-libs/reconciler"
 	log "github.com/sirupsen/logrus"
 )
 

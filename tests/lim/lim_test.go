@@ -140,7 +140,7 @@ func TestMain(m *testing.M) {
 		tc.AddNode(edgeNode)
 	}
 
-	tc.StartTrackingState(false)
+	tc.StartTrackingState(true)
 
 	// we now have a situation where TestContext has enough EVE nodes known
 	// for the rest of the tests to run. So run them:
